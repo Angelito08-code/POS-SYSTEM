@@ -194,7 +194,7 @@ class RTechComputerCenterPOS:
         self.conn.commit()
 
     # ---------------------------------------------------------
-    # GUMAGANANG TAX & STORE SETTINGS WINDOW
+    # TAX & STORE SETTINGS WINDOW
     # ---------------------------------------------------------
     def open_tax_settings(self):
         settings_win = tk.Toplevel(self.root)
@@ -264,40 +264,226 @@ class RTechComputerCenterPOS:
         btn_save.pack(fill="x", pady=(5, 0))
 
     # ---------------------------------------------------------
-    # GUMAGANANG MANAGE INVENTORY WINDOW (ADD, EDIT, DELETE)
+    # MANAGE SERVICES WINDOW
+    # ---------------------------------------------------------
+    def open_services_manager(self):
+        serv_win = tk.Toplevel(self.root)
+        serv_win.title("Manage Services")
+        serv_win.geometry("820x520")
+        serv_win.grab_set()
+        serv_win.configure(bg="#f1f5f9")
+
+        tk.Label(serv_win, text="🖨️ Manage Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+
+        main_container = tk.Frame(serv_win, bg="#f1f5f9")
+        main_container.pack(fill="both", expand=True, padx=15, pady=5)
+
+        form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
+        form_frame.pack(side="left", fill="y", padx=(0, 10))
+
+        tk.Label(form_frame, text="Detalye ng Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+
+        tk.Label(form_frame, text="Pangalan ng Serbisyo:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_name = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        e_name.pack(fill="x", pady=(2, 8))
+
+        tk.Label(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_price = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        e_price.pack(fill="x", pady=(2, 12))
+
+        selected_item_id = tk.IntVar(value=0)
+
+        def clear_form():
+            selected_item_id.set(0)
+            e_name.delete(0, tk.END)
+            e_price.delete(0, tk.END)
+
+        def refresh_serv_tree():
+            for r in tree_all.get_children():
+                tree_all.delete(r)
+            self.cursor.execute("SELECT id, name, price FROM items WHERE category='Services' ORDER BY id DESC")
+            for row in self.cursor.fetchall():
+                tree_all.insert("", "end", values=(row[0], row[1], f"₱ {row[2]:,.2f}"))
+
+        def add_item_db():
+            name = e_name.get().strip()
+            price_str = e_price.get().strip()
+
+            if not name or not price_str:
+                messagebox.showwarning("Warning", "Punan ang Pangalan at Presyo.", parent=serv_win)
+                return
+
+            try:
+                price = float(price_str)
+            except ValueError:
+                messagebox.showerror("Error", "Dapat numero ang Presyo.", parent=serv_win)
+                return
+
+            try:
+                self.cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Services', ?, -1, NULL)",
+                                    (name, price))
+                self.conn.commit()
+                messagebox.showinfo("Success", "Matagumpay na naidagdag ang serbisyo!", parent=serv_win)
+                clear_form()
+                refresh_serv_tree()
+                self.load_items()
+            except Exception as e:
+                messagebox.showerror("Error", f"Hindi naidagdag ang serbisyo: {e}", parent=serv_win)
+
+        def update_item_db():
+            item_id = selected_item_id.get()
+            if item_id == 0:
+                messagebox.showwarning("Warning", "Pumili muna ng serbisyo sa listahan na i-eedit.", parent=serv_win)
+                return
+
+            name = e_name.get().strip()
+            price_str = e_price.get().strip()
+
+            if not name or not price_str:
+                messagebox.showwarning("Warning", "Punan ang Pangalan at Presyo.", parent=serv_win)
+                return
+
+            try:
+                price = float(price_str)
+            except ValueError:
+                messagebox.showerror("Error", "Dapat numero ang Presyo.", parent=serv_win)
+                return
+
+            try:
+                self.cursor.execute("UPDATE items SET name=?, price=? WHERE id=?",
+                                    (name, price, item_id))
+                self.conn.commit()
+                messagebox.showinfo("Success", "Matagumpay na na-update ang serbisyo!", parent=serv_win)
+                clear_form()
+                refresh_serv_tree()
+                self.load_items()
+            except Exception as e:
+                messagebox.showerror("Error", f"Hindi na-update ang serbisyo: {e}", parent=serv_win)
+
+        def delete_item_db():
+            item_id = selected_item_id.get()
+            if item_id == 0:
+                messagebox.showwarning("Warning", "Pumili muna ng serbisyo sa listahan na buburahin.", parent=serv_win)
+                return
+
+            if messagebox.askyesno("Kumpirmahin", "Sigurado ka bang gusto mong tanggalin ang serbisyong ito?", parent=serv_win):
+                try:
+                    self.cursor.execute("DELETE FROM items WHERE id=?", (item_id,))
+                    self.conn.commit()
+                    messagebox.showinfo("Success", "Matagumpay na natanggal ang serbisyo.", parent=serv_win)
+                    clear_form()
+                    refresh_serv_tree()
+                    self.load_items()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Hindi ma-delete ang serbisyo: {e}", parent=serv_win)
+
+        def export_services_to_excel():
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files (Excel compatible)", "*.csv"), ("All Files", "*.*")],
+                title="I-save ang Services bilang Excel"
+            )
+            if file_path:
+                try:
+                    self.cursor.execute("SELECT id, name, price FROM items WHERE category='Services' ORDER BY id ASC")
+                    rows = self.cursor.fetchall()
+                    with open(file_path, mode='w', newline='', encoding='utf-8-sig') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(["Service ID", "Service Name", "Price"])
+                        for row in rows:
+                            writer.writerow(row)
+                    messagebox.showinfo("Success", f"Matagumpay na na-export ang services sa:\n{file_path}", parent=serv_win)
+                except Exception as e:
+                    messagebox.showerror("Export Error", f"Nagka-error sa pag-export: {e}", parent=serv_win)
+
+        btn_add = tk.Button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
+        btn_add.pack(fill="x", pady=2)
+
+        btn_upd = tk.Button(form_frame, text="✏️ I-update", font=("Segoe UI", 9, "bold"), bg="#ca8a04", fg="white", relief="flat", cursor="hand2", command=update_item_db)
+        btn_upd.pack(fill="x", pady=2)
+
+        btn_del = tk.Button(form_frame, text="🗑️ Tanggalin", font=("Segoe UI", 9, "bold"), bg="#ef4444", fg="white", relief="flat", cursor="hand2", command=delete_item_db)
+        btn_del.pack(fill="x", pady=2)
+
+        btn_clr = tk.Button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
+        btn_clr.pack(fill="x", pady=(10, 2))
+
+        right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
+        right_outer_frame.pack(side="right", fill="both", expand=True)
+
+        right_top_bar = tk.Frame(right_outer_frame, bg="white")
+        right_top_bar.pack(fill="x", padx=5, pady=5)
+
+        tk.Label(right_top_bar, text="Listahan ng mga Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        btn_export_serv = tk.Button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_services_to_excel)
+        btn_export_serv.pack(side="right")
+
+        tree_container = tk.Frame(right_outer_frame, bg="white")
+        tree_container.pack(fill="both", expand=True)
+
+        tree_all = ttk.Treeview(tree_container, columns=("ID", "Name", "Price"), show="headings")
+        tree_all.heading("ID", text="ID")
+        tree_all.heading("Name", text="Service Name")
+        tree_all.heading("Price", text="Price")
+
+        tree_all.column("ID", width=50, anchor="center")
+        tree_all.column("Name", width=280)
+        tree_all.column("Price", width=100, anchor="e")
+
+        sc_serv = ttk.Scrollbar(tree_container, orient="vertical", command=tree_all.yview)
+        tree_all.configure(yscrollcommand=sc_serv.set)
+
+        tree_all.pack(side="left", fill="both", expand=True)
+        sc_serv.pack(side="right", fill="y")
+
+        def on_select_item(event):
+            selected = tree_all.selection()
+            if not selected:
+                return
+            vals = tree_all.item(selected[0], 'values')
+            item_id = vals[0]
+            selected_item_id.set(int(item_id))
+
+            self.cursor.execute("SELECT name, price FROM items WHERE id=?", (item_id,))
+            res = self.cursor.fetchone()
+            if res:
+                e_name.delete(0, tk.END)
+                e_name.insert(0, res[0])
+                e_price.delete(0, tk.END)
+                e_price.insert(0, str(res[1]))
+
+        tree_all.bind("<<TreeviewSelect>>", on_select_item)
+        refresh_serv_tree()
+
+    # ---------------------------------------------------------
+    # MANAGE INVENTORY WINDOW
     # ---------------------------------------------------------
     def open_inventory_manager(self):
         inv_win = tk.Toplevel(self.root)
-        inv_win.title("Manage Inventory & Services")
-        inv_win.geometry("900x580")
+        inv_win.title("Manage Inventory")
+        inv_win.geometry("920x580")
         inv_win.grab_set()
         inv_win.configure(bg="#f1f5f9")
 
-        tk.Label(inv_win, text="📦 Manage Inventory & Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        tk.Label(inv_win, text="📦 Manage Inventory", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
         main_container = tk.Frame(inv_win, bg="#f1f5f9")
         main_container.pack(fill="both", expand=True, padx=15, pady=5)
 
-        # Left Frame: Form
         form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frame.pack(side="left", fill="y", padx=(0, 10))
 
-        tk.Label(form_frame, text="Detalye ng Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+        tk.Label(form_frame, text="Detalye ng Inventory Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
 
         tk.Label(form_frame, text="Pangalan:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_name = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
         e_name.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frame, text="Kategorya:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        c_cat = ttk.Combobox(form_frame, values=["Services", "Inventory"], state="readonly", font=("Segoe UI", 9))
-        c_cat.pack(fill="x", pady=(2, 8))
-        c_cat.set("Inventory")
-
         tk.Label(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_price = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
         e_price.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frame, text="Stock (-1 kung unli):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        tk.Label(form_frame, text="Stock:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_stock = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
         e_stock.pack(fill="x", pady=(2, 8))
         e_stock.insert(0, "0")
@@ -311,7 +497,6 @@ class RTechComputerCenterPOS:
         def clear_form():
             selected_item_id.set(0)
             e_name.delete(0, tk.END)
-            c_cat.set("Inventory")
             e_price.delete(0, tk.END)
             e_stock.delete(0, tk.END)
             e_stock.insert(0, "0")
@@ -320,14 +505,13 @@ class RTechComputerCenterPOS:
         def refresh_inv_tree():
             for r in tree_all.get_children():
                 tree_all.delete(r)
-            self.cursor.execute("SELECT id, name, category, price, stock, barcode FROM items ORDER BY id DESC")
+            self.cursor.execute("SELECT id, name, price, stock, barcode FROM items WHERE category='Inventory' ORDER BY id DESC")
             for row in self.cursor.fetchall():
-                bc = row[5] if row[5] else "N/A"
-                tree_all.insert("", "end", values=(row[0], row[1], row[2], f"₱ {row[3]:,.2f}", row[4], bc))
+                bc = row[4] if row[4] else "N/A"
+                tree_all.insert("", "end", values=(row[0], row[1], f"₱ {row[2]:,.2f}", row[3], bc))
 
         def add_item_db():
             name = e_name.get().strip()
-            cat = c_cat.get().strip()
             price_str = e_price.get().strip()
             stock_str = e_stock.get().strip()
             bc = e_barcode.get().strip() or None
@@ -344,8 +528,8 @@ class RTechComputerCenterPOS:
                 return
 
             try:
-                self.cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, ?, ?, ?, ?)",
-                                    (name, cat, price, stock, bc))
+                self.cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Inventory', ?, ?, ?)",
+                                    (name, price, stock, bc))
                 self.conn.commit()
                 messagebox.showinfo("Success", "Matagumpay na naidagdag ang item!", parent=inv_win)
                 clear_form()
@@ -361,7 +545,6 @@ class RTechComputerCenterPOS:
                 return
 
             name = e_name.get().strip()
-            cat = c_cat.get().strip()
             price_str = e_price.get().strip()
             stock_str = e_stock.get().strip()
             bc = e_barcode.get().strip() or None
@@ -378,8 +561,8 @@ class RTechComputerCenterPOS:
                 return
 
             try:
-                self.cursor.execute("UPDATE items SET name=?, category=?, price=?, stock=?, barcode=? WHERE id=?",
-                                    (name, cat, price, stock, bc, item_id))
+                self.cursor.execute("UPDATE items SET name=?, price=?, stock=?, barcode=? WHERE id=?",
+                                    (name, price, stock, bc, item_id))
                 self.conn.commit()
                 messagebox.showinfo("Success", "Matagumpay na na-update ang item!", parent=inv_win)
                 clear_form()
@@ -405,6 +588,25 @@ class RTechComputerCenterPOS:
                 except Exception as e:
                     messagebox.showerror("Error", f"Hindi ma-delete ang item: {e}", parent=inv_win)
 
+        def export_inventory_to_excel():
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files (Excel compatible)", "*.csv"), ("All Files", "*.*")],
+                title="I-save ang Inventory bilang Excel"
+            )
+            if file_path:
+                try:
+                    self.cursor.execute("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory' ORDER BY id ASC")
+                    rows = self.cursor.fetchall()
+                    with open(file_path, mode='w', newline='', encoding='utf-8-sig') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(["Item ID", "Barcode", "Item Name", "Price", "Stock"])
+                        for row in rows:
+                            writer.writerow(row)
+                    messagebox.showinfo("Success", f"Matagumpay na na-export ang inventory sa:\n{file_path}", parent=inv_win)
+                except Exception as e:
+                    messagebox.showerror("Export Error", f"Nagka-error sa pag-export: {e}", parent=inv_win)
+
         btn_add = tk.Button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
         btn_add.pack(fill="x", pady=2)
 
@@ -417,26 +619,33 @@ class RTechComputerCenterPOS:
         btn_clr = tk.Button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
         btn_clr.pack(fill="x", pady=(10, 2))
 
-        # Right Frame: Treeview
-        right_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
-        right_frame.pack(side="right", fill="both", expand=True)
+        right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
+        right_outer_frame.pack(side="right", fill="both", expand=True)
 
-        tree_all = ttk.Treeview(right_frame, columns=("ID", "Name", "Category", "Price", "Stock", "Barcode"), show="headings")
+        right_top_bar = tk.Frame(right_outer_frame, bg="white")
+        right_top_bar.pack(fill="x", padx=5, pady=5)
+
+        tk.Label(right_top_bar, text="Listahan ng Inventory", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        btn_export_inv = tk.Button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_inventory_to_excel)
+        btn_export_inv.pack(side="right")
+
+        tree_container = tk.Frame(right_outer_frame, bg="white")
+        tree_container.pack(fill="both", expand=True)
+
+        tree_all = ttk.Treeview(tree_container, columns=("ID", "Name", "Price", "Stock", "Barcode"), show="headings")
         tree_all.heading("ID", text="ID")
         tree_all.heading("Name", text="Item Name")
-        tree_all.heading("Category", text="Category")
         tree_all.heading("Price", text="Price")
         tree_all.heading("Stock", text="Stock")
         tree_all.heading("Barcode", text="Barcode")
 
         tree_all.column("ID", width=40, anchor="center")
-        tree_all.column("Name", width=190)
-        tree_all.column("Category", width=80, anchor="center")
+        tree_all.column("Name", width=210)
         tree_all.column("Price", width=80, anchor="e")
         tree_all.column("Stock", width=60, anchor="center")
         tree_all.column("Barcode", width=100, anchor="center")
 
-        sc_all = ttk.Scrollbar(right_frame, orient="vertical", command=tree_all.yview)
+        sc_all = ttk.Scrollbar(tree_container, orient="vertical", command=tree_all.yview)
         tree_all.configure(yscrollcommand=sc_all.set)
 
         tree_all.pack(side="left", fill="both", expand=True)
@@ -450,19 +659,18 @@ class RTechComputerCenterPOS:
             item_id = vals[0]
             selected_item_id.set(int(item_id))
 
-            self.cursor.execute("SELECT name, category, price, stock, barcode FROM items WHERE id=?", (item_id,))
+            self.cursor.execute("SELECT name, price, stock, barcode FROM items WHERE id=?", (item_id,))
             res = self.cursor.fetchone()
             if res:
                 e_name.delete(0, tk.END)
                 e_name.insert(0, res[0])
-                c_cat.set(res[1])
                 e_price.delete(0, tk.END)
-                e_price.insert(0, str(res[2]))
+                e_price.insert(0, str(res[1]))
                 e_stock.delete(0, tk.END)
-                e_stock.insert(0, str(res[3]))
+                e_stock.insert(0, str(res[2]))
                 e_barcode.delete(0, tk.END)
-                if res[4]:
-                    e_barcode.insert(0, res[4])
+                if res[3]:
+                    e_barcode.insert(0, res[3])
 
         tree_all.bind("<<TreeviewSelect>>", on_select_item)
         refresh_inv_tree()
@@ -491,7 +699,6 @@ class RTechComputerCenterPOS:
         self.lbl_subtitle_tax = tk.Label(title_box, text=f"POS SYSTEM (TIN: {self.tin_number} | Serv: {self.tax_rate_services}% | Inv: {self.tax_rate_inventory}%)", font=("Segoe UI", 8, "bold"), fg="#94a3b8", bg="#0b132b")
         self.lbl_subtitle_tax.pack(anchor="w")
 
-        # Header Buttons
         nav_btns = tk.Frame(header, bg="#0b132b")
         nav_btns.pack(side="right", padx=20, pady=15)
 
@@ -499,6 +706,11 @@ class RTechComputerCenterPOS:
                                 bg="#0284c7", fg="white", relief="flat", cursor="hand2",
                                 padx=12, command=self.open_tax_settings)
         tax_cfg_btn.pack(side="left", padx=(0, 10))
+
+        serv_manage_btn = tk.Button(nav_btns, text="🖨️ Manage Services", font=("Segoe UI", 10, "bold"), 
+                                    bg="#0284c7", fg="white", relief="flat", cursor="hand2",
+                                    padx=12, command=self.open_services_manager)
+        serv_manage_btn.pack(side="left", padx=(0, 10))
 
         manage_btn = tk.Button(nav_btns, text="📦 Manage Inventory", font=("Segoe UI", 10, "bold"), 
                                bg="#1d4ed8", fg="white", relief="flat", cursor="hand2",
@@ -585,7 +797,7 @@ class RTechComputerCenterPOS:
         add_btn.pack(fill="x", pady=(15, 0))
 
         # RIGHT PANEL: Cart & Checkout
-        self.right_panel = tk.Frame(self.main_frame, bg="white", bd=0, relief="flat", width=420)
+        self.right_panel = tk.Frame(self.main_frame, bg="white", bd=0, relief="flat", width=460)
         self.right_panel.pack(side="right", fill="both")
         self.right_panel.pack_propagate(False)
 
@@ -601,28 +813,39 @@ class RTechComputerCenterPOS:
         cart_tree_frame = tk.Frame(self.right_panel, bg="white", padx=10, pady=5)
         cart_tree_frame.pack(fill="both", expand=True)
 
-        self.cart_tree = ttk.Treeview(cart_tree_frame, columns=("Name", "Qty", "Price", "Subtotal"), show="headings", height=7)
+        # In-update ang Cart Treeview para isama ang Discount column
+        self.cart_tree = ttk.Treeview(cart_tree_frame, columns=("Name", "Qty", "Price", "Disc", "Subtotal"), show="headings", height=7)
         self.cart_tree.heading("Name", text="Item")
         self.cart_tree.heading("Qty", text="Qty")
         self.cart_tree.heading("Price", text="Price")
+        self.cart_tree.heading("Disc", text="Discount")
         self.cart_tree.heading("Subtotal", text="Total")
-        self.cart_tree.column("Name", width=170)
-        self.cart_tree.column("Qty", width=50, anchor="center")
-        self.cart_tree.column("Price", width=80, anchor="e")
-        self.cart_tree.column("Subtotal", width=90, anchor="e")
+        
+        self.cart_tree.column("Name", width=140)
+        self.cart_tree.column("Qty", width=40, anchor="center")
+        self.cart_tree.column("Price", width=70, anchor="e")
+        self.cart_tree.column("Disc", width=75, anchor="center")
+        self.cart_tree.column("Subtotal", width=80, anchor="e")
          
         sc_cart = ttk.Scrollbar(cart_tree_frame, orient="vertical", command=self.cart_tree.yview)
         self.cart_tree.configure(yscrollcommand=sc_cart.set)
          
         self.cart_tree.pack(side="left", fill="both", expand=True)
         sc_cart.pack(side="right", fill="y")
+        
+        # Double-click para baguhin o maglagay ng discount sa item sa cart
+        self.cart_tree.bind("<Double-1>", self.open_edit_discount_window)
 
         cart_ctrls = tk.Frame(self.right_panel, bg="white", padx=10, pady=2)
         cart_ctrls.pack(fill="x")
 
         rem_btn = tk.Button(cart_ctrls, text="❌ Remove Selected Item", font=("Segoe UI", 9), bg="#64748b", fg="white", 
                             relief="flat", cursor="hand2", command=self.remove_cart_item)
-        rem_btn.pack(anchor="w")
+        rem_btn.pack(side="left", anchor="w")
+        
+        disc_btn = tk.Button(cart_ctrls, text="🏷️ Edit Discount", font=("Segoe UI", 9), bg="#d97706", fg="white", 
+                             relief="flat", cursor="hand2", command=lambda: self.open_edit_discount_window(None))
+        disc_btn.pack(side="right", anchor="e")
 
         # --- CUSTOMER TYPE SELECTION ---
         cust_type_frame = tk.Frame(self.right_panel, bg="white", padx=10, pady=5)
@@ -823,7 +1046,7 @@ class RTechComputerCenterPOS:
             messagebox.showerror("Export Error", f"Nagka-error sa pag-export: {e}")
 
     # ---------------------------------------------------------
-    # ITEM & CART LOGIC
+    # ITEM & CART LOGIC (MAY DISCOUNT FUNCTION)
     # ---------------------------------------------------------
     def load_items(self):
         for r in self.tree_services.get_children():
@@ -866,17 +1089,18 @@ class RTechComputerCenterPOS:
                     messagebox.showwarning("Stock Limit", f"Naabot na ang maximum stock para sa '{name}'.")
                     return
                 cart_item['qty'] += 1
-                cart_item['subtotal'] = cart_item['qty'] * cart_item['price']
                 self.update_cart_display()
                 return
 
+        # Nagdagdag ng default discount properties ('none', 0)
         self.cart.append({
             'id': int(item_id),
             'name': name,
             'price': price,
             'qty': 1,
-            'subtotal': price,
-            'category': cat
+            'category': cat,
+            'discount_type': 'none',  # 'none', 'percentage', 'fixed'
+            'discount_value': 0.0     # halaga ng discount
         })
         self.update_cart_display()
 
@@ -912,7 +1136,6 @@ class RTechComputerCenterPOS:
                     messagebox.showwarning("Stock Limit", f"Naabot na ang maximum stock para sa '{name}'.")
                     return
                 cart_item['qty'] += 1
-                cart_item['subtotal'] = cart_item['qty'] * cart_item['price']
                 self.update_cart_display()
                 return
 
@@ -921,10 +1144,66 @@ class RTechComputerCenterPOS:
             'name': name,
             'price': price,
             'qty': 1,
-            'subtotal': price,
-            'category': cat
+            'category': cat,
+            'discount_type': 'none',
+            'discount_value': 0.0
         })
         self.update_cart_display()
+
+    def open_edit_discount_window(self, event=None):
+        """Window para mag-input o mag-edit ng discount sa napiling cart item"""
+        selected = self.cart_tree.selection()
+        if not selected:
+            messagebox.showwarning("Babala", "Pumili muna ng item sa kasalukuyang order nalalagyan ng discount.")
+            return
+
+        idx = self.cart_tree.index(selected[0])
+        item = self.cart[idx]
+
+        disc_win = tk.Toplevel(self.root)
+        disc_win.title(f"Discount: {item['name']}")
+        disc_win.geometry("340x240")
+        disc_win.grab_set()
+        disc_win.configure(bg="#f1f5f9")
+
+        tk.Label(disc_win, text=f"🏷️ I-apply ang Discount", font=("Segoe UI", 11, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+
+        form_frm = tk.Frame(disc_win, bg="white", padx=12, pady=12, bd=1, relief="solid")
+        form_frm.pack(fill="both", expand=True, padx=15, pady=5)
+
+        tk.Label(form_frm, text="Uri ng Discount:", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        
+        dtype_var = tk.StringVar(value=item['discount_type'])
+        combo_dtype = ttk.Combobox(form_frm, textvariable=dtype_var, values=["none", "percentage", "fixed"], state="readonly", font=("Segoe UI", 9))
+        combo_dtype.pack(fill="x", pady=(2, 8))
+
+        tk.Label(form_frm, text="Halaga ng Discount (% o ₱):", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        e_val = tk.Entry(form_frm, font=("Segoe UI", 10))
+        e_val.pack(fill="x", pady=(2, 12))
+        e_val.insert(0, str(item['discount_value']))
+
+        def apply_discount():
+            dtype = dtype_var.get()
+            try:
+                val = float(e_val.get().strip())
+            except ValueError:
+                val = 0.0
+
+            if dtype == 'percentage' and (val < 0 or val > 100):
+                messagebox.showerror("Error", "Ang percentage ay dapat nasa pagitan ng 0 at 100.", parent=disc_win)
+                return
+            if dtype == 'fixed' and val < 0:
+                messagebox.showerror("Error", "Hindi pwedeng maging negatibo ang fixed discount.", parent=disc_win)
+                return
+
+            item['discount_type'] = dtype if dtype != 'none' else 'none'
+            item['discount_value'] = val if dtype != 'none' else 0.0
+
+            self.update_cart_display()
+            disc_win.destroy()
+
+        btn_apply = tk.Button(form_frm, text="✔ I-apply ang Discount", font=("Segoe UI", 9, "bold"), bg="#22c55e", fg="white", relief="flat", cursor="hand2", command=apply_discount)
+        btn_apply.pack(fill="x")
 
     def update_cart_display(self):
         for r in self.cart_tree.get_children():
@@ -937,19 +1216,45 @@ class RTechComputerCenterPOS:
         cust_type = self.customer_type_var.get()
 
         for item in self.cart:
+            base_item_total = item['price'] * item['qty']
+            item_discount_amount = 0.0
+
+            # Kinakalkula ang per-item discount bago makuha ang final subtotal ng line item
+            if item['discount_type'] == 'percentage':
+                item_discount_amount = base_item_total * (item['discount_value'] / 100.0)
+            elif item['discount_type'] == 'fixed':
+                item_discount_amount = item['discount_value'] * item['qty']
+
+            # Proteksyon laban sa labis na discount
+            if item_discount_amount > base_item_total:
+                item_discount_amount = base_item_total
+
+            final_item_subtotal = base_item_total - item_discount_amount
+            item['subtotal'] = final_item_subtotal  # Save computed subtotal
+
+            # Displey string para sa discount column
+            if item['discount_type'] == 'percentage':
+                disc_str = f"{item['discount_value']}% (-₱{item_discount_amount:,.2f})"
+            elif item['discount_type'] == 'fixed':
+                disc_str = f"₱{item['discount_value']} (-₱{item_discount_amount:,.2f})"
+            else:
+                disc_str = "Wala"
+
             self.cart_tree.insert("", "end", values=(
                 item['name'],
                 item['qty'],
                 f"₱ {item['price']:,.2f}",
-                f"₱ {item['subtotal']:,.2f}"
+                disc_str,
+                f"₱ {final_item_subtotal:,.2f}"
             ))
-            subtotal += item['subtotal']
+
+            subtotal += final_item_subtotal
 
             if cust_type == "Government Customer":
                 if item['category'] == "Services":
-                    tax_services += item['subtotal'] * (self.tax_rate_services / 100.0)
+                    tax_services += final_item_subtotal * (self.tax_rate_services / 100.0)
                 elif item['category'] == "Inventory":
-                    tax_inventory += item['subtotal'] * (self.tax_rate_inventory / 100.0)
+                    tax_inventory += final_item_subtotal * (self.tax_rate_inventory / 100.0)
 
         total_tax = tax_services + tax_inventory
         total_due = subtotal + total_tax
@@ -998,8 +1303,8 @@ class RTechComputerCenterPOS:
         except ValueError:
             self.lbl_change.config(text="₱ 0.00")
 
-   # ---------------------------------------------------------
-    # PRINT RECEIPT & CHECKOUT FUNCTIONALITY (DIRECT PRINT)
+    # ---------------------------------------------------------
+    # PRINT RECEIPT & CHECKOUT FUNCTIONALITY
     # ---------------------------------------------------------
     def print_receipt(self, sale_id, cart_items, subtotal, tax_services, tax_inventory, total_due, cash, change, customer_type):
         date_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1013,15 +1318,22 @@ class RTechComputerCenterPOS:
         receipt_text += f"Date/Time: {date_time_str}\n"
         receipt_text += f"Customer: {customer_type}\n"
         receipt_text += "-" * 42 + "\n"
-        receipt_text += f"{'Item':<18} {'Qty':<4} {'Price':<8} {'Total':<8}\n"
+        receipt_text += f"{'Item':<16} {'Qty':<3} {'Price':<7} {'Disc':<7} {'Total':<7}\n"
         receipt_text += "-" * 42 + "\n"
 
         for item in cart_items:
-            name = item['name'][:17]
+            name = item['name'][:15]
             qty = item['qty']
             price = item['price']
             subtot = item['subtotal']
-            receipt_text += f"{name:<18} {qty:<4} {price:<8.2f} {subtot:<8.2f}\n"
+            
+            disc_desc = "None"
+            if item['discount_type'] == 'percentage':
+                disc_desc = f"{int(item['discount_value'])}%"
+            elif item['discount_type'] == 'fixed':
+                disc_desc = f"₱{int(item['discount_value'])}"
+
+            receipt_text += f"{name:<16} {qty:<3} {price:<7.1f} {disc_desc:<7} {subtot:<7.2f}\n"
 
         receipt_text += "-" * 42 + "\n"
         receipt_text += f"Subtotal: {'₱ ' + f'{subtotal:,.2f}':>31}\n"
@@ -1149,6 +1461,7 @@ class RTechComputerCenterPOS:
         self.clear_cart()
         self.load_items()
         self.load_sales_data()
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = RTechComputerCenterPOS(root)
