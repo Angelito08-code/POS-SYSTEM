@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# DATABASE & SETTINGS FUNCTIONS (Dapat una itong ideclare)
+# DATABASE & SETTINGS FUNCTIONS
 # ---------------------------------------------------------
 def get_db_connection():
     conn = sqlite3.connect("pos_rtech_computer.db")
@@ -113,7 +113,7 @@ def save_setting_db(key, value):
     conn.close()
 
 # ---------------------------------------------------------
-# RUN INITIALIZATIONS & LOAD SETTINGS (Dapat bago ang UI)
+# RUN INITIALIZATIONS & LOAD SETTINGS
 # ---------------------------------------------------------
 init_db()
 settings = load_settings()
@@ -350,22 +350,29 @@ def receipt_preview_dialog(receipt_text):
     )
 
 # ---------------------------------------------------------
-# MAIN HEADER BAR (Safe na rito tawagin ang settings dahil defined na)
+# MAIN HEADER BAR (Kasama ang Logo mula sa GitHub repo)
 # ---------------------------------------------------------
-header_col1, header_col2 = st.columns([3, 2])
+header_col1, header_col2, header_col3 = st.columns([0.6, 2.4, 2])
+
 with header_col1:
-    st.markdown(f"## 💻 {settings['store_name']}")
-    st.caption(f"TIN: {settings['tin_number']} | Services Tax: {settings['tax_rate_services']}% | Inventory Tax: {settings['tax_rate_inventory']}%")
+    try:
+        st.image("RTECH Logo.png", width=65)
+    except Exception:
+        st.markdown("### 💻")
 
 with header_col2:
-    btn_col1, btn_col2, btn_col3 = st.columns(3)
-    with btn_col1:
+    st.markdown(f"## {settings['store_name']}")
+    st.caption(f"TIN: {settings['tin_number']} | Services Tax: {settings['tax_rate_services']}% | Inventory Tax: {settings['tax_rate_inventory']}%")
+
+with header_col3:
+    b1, b2, b3 = st.columns(3)
+    with b1:
         if st.button("⚙️ Settings"):
             tax_settings_dialog()
-    with btn_col2:
+    with b2:
         if st.button("🖨️ Services"):
             services_manager_dialog()
-    with btn_col3:
+    with b3:
         if st.button("📦 Inventory"):
             inventory_manager_dialog()
 
