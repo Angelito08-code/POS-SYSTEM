@@ -396,7 +396,8 @@ with right_col:
             with cols[0]:
                 st.write(f"**{item['name']}** (₱{item['price']:,.2f} x {item['qty']})")
                 if item['discount_type'] != 'none':
-                    st.caption(f"Disc: {item['discount_value']}{'%' if item['discount_type']=='percentage':'₱'} (-₱{disc_amt:,.2f})")
+                    disc_symbol = '%' if item['discount_type'] == 'percentage' else '₱'
+                    st.caption(f"Disc: {item['discount_value']}{disc_symbol} (-₱{disc_amt:,.2f})")
             with cols[1]:
                 if st.button("➕", key=f"inc_{idx}"):
                     item['qty'] += 1
