@@ -26,7 +26,7 @@ except ImportError:
 class RTechComputerCenterPOS:
     def __init__(self, root):
         self.root = root
-        self.style = None
+      
 
         # Default Settings (Services: 4%, Inventory: 5%)
         self.store_name = "R-TECH COMPUTER CENTER"
@@ -40,6 +40,7 @@ class RTechComputerCenterPOS:
 
         self.root.title(f"{self.store_name} POS SYSTEM")
 
+        self.style = None
         # Theme Configuration
      
         if os.name == 'nt':
