@@ -1463,6 +1463,6 @@ class RTechComputerCenterPOS:
         self.load_sales_data()
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = st.container()
     app = RTechComputerCenterPOS(root)
     root.mainloop()
