@@ -4,6 +4,18 @@ from datetime import datetime
 import os
 import csv
 
+def main():
+    # Move your global container and app logic here
+    root = st.container()
+    
+    with root:
+        st.write("Welcome to the POS System")
+    
+    # Rest of your application code...
+
+if __name__ == "__main__":
+    main()
+
 # Pillow library para sa pag-load at pag-edit ng logo
 try:
     from PIL import Image, ImageTk, ImageDraw, ImageChops
