@@ -26,8 +26,6 @@ except ImportError:
 class RTechComputerCenterPOS:
     def __init__(self, root):
         self.root = root
-        self.root.geometry("1280x740")
-        self.root.minsize(1100, 680)
 
         # Default Settings (Services: 4%, Inventory: 5%)
         self.store_name = "R-TECH COMPUTER CENTER"
