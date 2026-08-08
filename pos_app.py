@@ -4,6 +4,13 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
+header_col1, header_col2, header_col3 = st.columns([1, 3, 2])
+with header_col1:
+    st.image("https://github.com/Angelito08-code/POS-SYSTEM/blob/main/RTECH%20Logo.png", width=100)
+with header_col2:
+    st.markdown(f"## 💻 {settings['store_name']}")
+    st.caption(f"TIN: {settings['tin_number']}")
+
 # ---------------------------------------------------------
 # PAGE CONFIGURATION
 # ---------------------------------------------------------
