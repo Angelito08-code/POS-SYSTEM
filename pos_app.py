@@ -145,7 +145,7 @@ def tax_settings_dialog():
 
 @st.dialog("🖨️ Manage Services", width="large")
 def services_manager_dialog():
-    st.subheader("Add / Edit Services")
+    st.subheader("Add New Service")
     conn = get_db_connection()
     
     with st.form("service_form"):
@@ -156,17 +156,39 @@ def services_manager_dialog():
             cursor = conn.cursor()
             cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Services', ?, -1, NULL)", (s_name, s_price))
             conn.commit()
+            conn.close()
             st.success("Service added!")
             st.rerun()
 
     st.divider()
-    st.subheader("Existing Services")
+    st.subheader("Edit / Delete Services")
+    conn = get_db_connection()
     df_serv = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
     conn.close()
     
     if not df_serv.empty:
-        st.dataframe(df_serv, use_container_width=True)
-        del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]))
+        st.dataframe(df_serv, use_container_width=True, hide_index=True)
+        
+        # Edit Service Section
+        edit_id = st.selectbox("Select Service ID to Edit", options=[0] + list(df_serv["id"]), key="edit_serv_select")
+        if edit_id != 0:
+            selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
+            with st.form("edit_serv_form"):
+                e_name = st.text_input("Edit Service Name", value=selected_row["name"])
+                e_price = st.number_input("Edit Price (₱)", value=float(selected_row["price"]), min_value=0.0, step=1.0)
+                update_sub = st.form_submit_button("💾 Update Service")
+                if update_sub:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE items SET name=?, price=? WHERE id=?", (e_name, e_price, edit_id))
+                    conn.commit()
+                    conn.close()
+                    st.success("Service updated successfully!")
+                    st.rerun()
+
+        st.divider()
+        # Delete Service Section
+        del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
         if del_id != 0 and st.button("🗑️ Delete Selected Service"):
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -178,7 +200,7 @@ def services_manager_dialog():
 
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
-    st.subheader("Add / Edit Inventory Item")
+    st.subheader("Add New Inventory Item")
     conn = get_db_connection()
     
     with st.form("inventory_form"):
@@ -192,21 +214,47 @@ def inventory_manager_dialog():
             cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Inventory', ?, ?, ?)", 
                            (i_name, i_price, i_stock, i_barcode if i_barcode else None))
             conn.commit()
+            conn.close()
             st.success("Inventory item added!")
             st.rerun()
 
     st.divider()
-    st.subheader("Existing Inventory")
+    st.subheader("Edit / Delete Inventory")
+    conn = get_db_connection()
     df_inv = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
     conn.close()
     
     if not df_inv.empty:
-        st.dataframe(df_inv, use_container_width=True)
-        del_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
-        if del_id != 0 and st.button("🗑️ Delete Selected Item"):
+        st.dataframe(df_inv, use_container_width=True, hide_index=True)
+        
+        # Edit Inventory Section
+        edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + list(df_inv["id"]), key="edit_inv_select")
+        if edit_inv_id != 0:
+            selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
+            with st.form("edit_inv_form"):
+                ei_name = st.text_input("Edit Item Name", value=selected_inv_row["name"])
+                ei_price = st.number_input("Edit Price (₱)", value=float(selected_inv_row["price"]), min_value=0.0, step=1.0)
+                ei_stock = st.number_input("Edit Stock", value=int(selected_inv_row["stock"]), min_value=0, step=1)
+                current_bc = selected_inv_row["barcode"]
+                ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
+                update_inv_sub = st.form_submit_button("💾 Update Inventory Item")
+                if update_inv_sub:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE items SET name=?, price=?, stock=?, barcode=? WHERE id=?", 
+                                   (ei_name, ei_price, ei_stock, ei_barcode if ei_barcode else None, edit_inv_id))
+                    conn.commit()
+                    conn.close()
+                    st.success("Inventory item updated successfully!")
+                    st.rerun()
+
+        st.divider()
+        # Delete Inventory Section
+        del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
+        if del_inv_id != 0 and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM items WHERE id=?", (del_id,))
+            cursor.execute("DELETE FROM items WHERE id=?", (del_inv_id,))
             conn.commit()
             conn.close()
             st.success("Item deleted.")
@@ -345,16 +393,13 @@ with left_col:
             conn = get_db_connection()
             cursor = conn.cursor()
             
-            # 1. Unahin ang saktong Barcode match
             cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode=?", (scanned_code,))
             db_item = cursor.fetchone()
             
-            # 2. Kung walang barcode, hanapin ang saktong Pangalan (Case Insensitive)
             if not db_item:
                 cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name COLLATE NOCASE = ?", (scanned_code,))
                 db_item = cursor.fetchone()
                 
-            # 3. Panghuli, partial match kung sakaling hinanap lang
             if not db_item:
                 cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name LIKE ?", (f"%{scanned_code}%",))
                 db_item = cursor.fetchone()
