@@ -1,10 +1,94 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import sqlite3
 import pandas as pd
 from datetime import datetime
 import os
 import csv
 
+@st.dialog("🧾 Receipt Preview & Print", width="medium")
+def receipt_preview_dialog(receipt_text):
+    # HTML template na may built-in na Print button at CSS para gumana sa kahit anong printer
+    html_receipt = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{
+                font-family: 'Courier New', Courier, monospace;
+                background-color: #ffffff;
+                color: #000000;
+                margin: 0;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }}
+            .receipt-box {{
+                background: #ffffff;
+                padding: 10px;
+                width: 100%;
+                max-width: 320px;
+                white-space: pre-wrap;
+                font-size: 13px;
+                line-height: 1.2;
+            }}
+            .print-btn {{
+                display: block;
+                width: 100%;
+                max-width: 320px;
+                padding: 12px;
+                background-color: #ff4b4b;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 15px;
+                text-align: center;
+            }}
+            .print-btn:hover {{
+                background-color: #e03e3e;
+            }}
+            /* Print settings para sa thermal printers o regular printers */
+            @media print {{
+                body * {{
+                    visibility: hidden;
+                }}
+                .receipt-box, .receipt-box * {{
+                    visibility: visible;
+                }}
+                .receipt-box {{
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    border: none;
+                    padding: 0;
+                }}
+                .print-btn {{
+                    display: none;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="receipt-box">{receipt_text}</div>
+        <button class="print-btn" onclick="window.print()">🖨️ Print to Any Printer</button>
+    </body>
+    </html>
+    """
+    components.html(html_receipt, height=450, scrolling=True)
+    
+    # Optional backup download button kung gusto i-save bilang text file
+    st.download_button(
+        "📥 Download Receipt Text File", 
+        data=receipt_text, 
+        file_name=f"receipt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", 
+        mime="text/plain"
+    )
 # ---------------------------------------------------------
 # PAGE CONFIGURATION
 # ---------------------------------------------------------
