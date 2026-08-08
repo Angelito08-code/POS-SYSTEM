@@ -148,7 +148,7 @@ def tax_settings_dialog():
 @st.dialog("🖨️ Manage Services", width="large")
 def services_manager_dialog():
     st.subheader("Add New Service")
-    with st.form("service_form"):
+    with st.form("service_form", clear_on_submit=True):
         s_name = st.text_input("Service Name")
         s_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
         submitted = st.form_submit_button("Add New Service")
@@ -159,7 +159,6 @@ def services_manager_dialog():
             conn.commit()
             conn.close()
             st.success("Service added!")
-            st.rerun()
 
     st.divider()
     st.subheader("Edit / Delete Services")
@@ -184,7 +183,6 @@ def services_manager_dialog():
                     conn.commit()
                     conn.close()
                     st.success("Service updated successfully!")
-                    st.rerun()
 
         st.divider()
         del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
@@ -195,12 +193,11 @@ def services_manager_dialog():
             conn.commit()
             conn.close()
             st.success("Service deleted.")
-            st.rerun()
 
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
     st.subheader("Add New Inventory Item")
-    with st.form("inventory_form"):
+    with st.form("inventory_form", clear_on_submit=True):
         i_name = st.text_input("Item Name")
         i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
         i_stock = st.number_input("Stock Quantity", min_value=0, step=1, value=10)
@@ -214,7 +211,6 @@ def inventory_manager_dialog():
             conn.commit()
             conn.close()
             st.success("Inventory item added!")
-            st.rerun()
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -243,7 +239,6 @@ def inventory_manager_dialog():
                     conn.commit()
                     conn.close()
                     st.success("Inventory item updated successfully!")
-                    st.rerun()
 
         st.divider()
         del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
@@ -254,7 +249,6 @@ def inventory_manager_dialog():
             conn.commit()
             conn.close()
             st.success("Item deleted.")
-            st.rerun()
 
 @st.dialog("🏷️ Edit Item Discount")
 def edit_discount_dialog(index, item):
@@ -350,7 +344,7 @@ def receipt_preview_dialog(receipt_text):
     )
 
 # ---------------------------------------------------------
-# MAIN HEADER BAR (Kasama ang Logo mula sa GitHub repo)
+# MAIN HEADER BAR
 # ---------------------------------------------------------
 header_col1, header_col2, header_col3 = st.columns([0.6, 2.4, 2])
 
