@@ -47,9 +47,9 @@ class RTechComputerCenterPOS:
             self.style.theme_use('clam')
          
         # Configure Treeview Colors and Fonts
-        self.style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
-        self.style.configure("Treeview", font=("Segoe UI", 10), rowheight=25)
-        self.style.map('Treeview', background=[('selected', '#0284c7')], foreground=[('selected', 'white')])
+        # self.style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        # self.style.configure("Treeview", font=("Segoe UI", 10), rowheight=25)
+        # self.style.map('Treeview', background=[('selected', '#0284c7')], foreground=[('selected', 'white')])
 
         # Cart data
         self.cart = []
