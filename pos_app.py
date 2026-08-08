@@ -3,92 +3,7 @@ import streamlit.components.v1 as components
 import sqlite3
 import pandas as pd
 from datetime import datetime
-import os
-import csv
 
-@st.dialog("🧾 Receipt Preview & Print", width="medium")
-def receipt_preview_dialog(receipt_text):
-    # HTML template na may built-in na Print button at CSS para gumana sa kahit anong printer
-    html_receipt = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body {{
-                font-family: 'Courier New', Courier, monospace;
-                background-color: #ffffff;
-                color: #000000;
-                margin: 0;
-                padding: 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }}
-            .receipt-box {{
-                background: #ffffff;
-                padding: 10px;
-                width: 100%;
-                max-width: 320px;
-                white-space: pre-wrap;
-                font-size: 13px;
-                line-height: 1.2;
-            }}
-            .print-btn {{
-                display: block;
-                width: 100%;
-                max-width: 320px;
-                padding: 12px;
-                background-color: #ff4b4b;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-                margin-top: 15px;
-                text-align: center;
-            }}
-            .print-btn:hover {{
-                background-color: #e03e3e;
-            }}
-            /* Print settings para sa thermal printers o regular printers */
-            @media print {{
-                body * {{
-                    visibility: hidden;
-                }}
-                .receipt-box, .receipt-box * {{
-                    visibility: visible;
-                }}
-                .receipt-box {{
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                    border: none;
-                    padding: 0;
-                }}
-                .print-btn {{
-                    display: none;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="receipt-box">{receipt_text}</div>
-        <button class="print-btn" onclick="window.print()">🖨️ Print to Any Printer</button>
-    </body>
-    </html>
-    """
-    components.html(html_receipt, height=450, scrolling=True)
-    
-    # Optional backup download button kung gusto i-save bilang text file
-    st.download_button(
-        "📥 Download Receipt Text File", 
-        data=receipt_text, 
-        file_name=f"receipt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", 
-        mime="text/plain"
-    )
 # ---------------------------------------------------------
 # PAGE CONFIGURATION
 # ---------------------------------------------------------
@@ -309,10 +224,86 @@ def edit_discount_dialog(index, item):
         st.success("Discount applied!")
         st.rerun()
 
-@st.dialog("🧾 Receipt Preview", width="medium")
+@st.dialog("🧾 Receipt Preview & Print", width="medium")
 def receipt_preview_dialog(receipt_text):
-    st.text_area("Receipt Output", value=receipt_text, height=400)
-    st.download_button("📥 Download Receipt Text", data=receipt_text, file_name=f"receipt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", mime="text/plain")
+    html_receipt = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{
+                font-family: 'Courier New', Courier, monospace;
+                background-color: #ffffff;
+                color: #000000;
+                margin: 0;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }}
+            .receipt-box {{
+                background: #ffffff;
+                padding: 10px;
+                width: 100%;
+                max-width: 320px;
+                white-space: pre-wrap;
+                font-size: 13px;
+                line-height: 1.2;
+            }}
+            .print-btn {{
+                display: block;
+                width: 100%;
+                max-width: 320px;
+                padding: 12px;
+                background-color: #ff4b4b;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 15px;
+                text-align: center;
+            }}
+            .print-btn:hover {{
+                background-color: #e03e3e;
+            }}
+            @media print {{
+                body * {{
+                    visibility: hidden;
+                }}
+                .receipt-box, .receipt-box * {{
+                    visibility: visible;
+                }}
+                .receipt-box {{
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    border: none;
+                    padding: 0;
+                }}
+                .print-btn {{
+                    display: none;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="receipt-box">{receipt_text}</div>
+        <button class="print-btn" onclick="window.print()">🖨️ Print to Any Printer</button>
+    </body>
+    </html>
+    """
+    components.html(html_receipt, height=450, scrolling=True)
+    
+    st.download_button(
+        "📥 Download Receipt Text File", 
+        data=receipt_text, 
+        file_name=f"receipt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", 
+        mime="text/plain"
+    )
 
 # ---------------------------------------------------------
 # MAIN HEADER BAR
@@ -342,13 +333,12 @@ st.divider()
 left_col, right_col = st.columns([1.3, 1])
 
 with left_col:
-    # Barcode Scanner / Quick Search section
     with st.form("barcode_form", clear_on_submit=True):
         b_col1, b_col2 = st.columns([4, 1])
         with b_col1:
             scanned_code = st.text_input("Barcode Scanner / Search", placeholder="Scan barcode or type item code...", key="scan_input")
         with b_col2:
-            st.write("") # spacing alignment
+            st.write("")
             submitted_scan = st.form_submit_button("Scan / Add", use_container_width=True)
 
         if submitted_scan and scanned_code:
@@ -363,7 +353,6 @@ with left_col:
                 if cat == "Inventory" and stock == 0:
                     st.error(f"Item '{name}' is out of stock!")
                 else:
-                    # Check if already in cart
                     found = False
                     for c_item in st.session_state.cart:
                         if c_item['id'] == item_id:
@@ -383,7 +372,6 @@ with left_col:
             else:
                 st.error(f"Item not found: {scanned_code}")
 
-    # Tabs for Services, Inventory, and Daily Sales
     tab_serv, tab_inv, tab_sales = st.tabs(["🖨️ Services", "📦 Inventory", "📊 Daily Sales"])
 
     conn = get_db_connection()
@@ -452,7 +440,6 @@ with right_col:
         st.session_state.cart = []
         st.rerun()
 
-    # Render Cart Items
     if not st.session_state.cart:
         st.info("Cart is empty.")
     else:
@@ -553,7 +540,6 @@ with right_col:
                 conn.commit()
                 conn.close()
 
-                # Build receipt string
                 receipt_text = "=" * 42 + "\n"
                 receipt_text += f"{settings['store_name']:^42}\n"
                 receipt_text += f"TIN: {settings['tin_number']:^42}\n"
