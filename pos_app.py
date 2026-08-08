@@ -214,27 +214,27 @@ class RTechComputerCenterPOS:
         settings_win.grab_set()
         settings_win.configure(bg="#f1f5f9")
 
-        tk.Frame(settings_win, text="⚙️ Store & Tax Settings", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        st.container(settings_win, text="⚙️ Store & Tax Settings", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
-        form_frame = tk.Frame(settings_win, bg="white", padx=15, pady=15, bd=1, relief="solid")
+        form_frame = st.container(settings_win, bg="white", padx=15, pady=15, bd=1, relief="solid")
         form_frame.pack(fill="both", expand=True, padx=15, pady=5)
 
-        tk.Frame(form_frame, text="Store Name:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        st.container(form_frame, text="Store Name:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         entry_store = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_store.pack(fill="x", pady=(2, 8))
         entry_store.insert(0, self.store_name)
 
-        tk.Frame(form_frame, text="TIN Number:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        st.container(form_frame, text="TIN Number:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         entry_tin = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tin.pack(fill="x", pady=(2, 8))
         entry_tin.insert(0, self.tin_number)
 
-        tk.Frame(form_frame, text="Services Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        st.container(form_frame, text="Services Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         entry_tax_serv = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tax_serv.pack(fill="x", pady=(2, 8))
         entry_tax_serv.insert(0, str(self.tax_rate_services))
 
-        tk.Frame(form_frame, text="Inventory Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        st.container(form_frame, text="Inventory Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         entry_tax_inv = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tax_inv.pack(fill="x", pady=(2, 12))
         entry_tax_inv.insert(0, str(self.tax_rate_inventory))
@@ -284,30 +284,30 @@ class RTechComputerCenterPOS:
         serv_win.grab_set()
         serv_win.configure(bg="#f1f5f9")
 
-        tk.Frame(serv_win, text="🖨️ Manage Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        st.container(serv_win, text="🖨️ Manage Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
-        main_container = tk.Frame(serv_win, bg="#f1f5f9")
+        main_container = st.container(serv_win, bg="#f1f5f9")
         main_container.pack(fill="both", expand=True, padx=15, pady=5)
 
-        form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
+        form_frame = st.container(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frame.pack(side="left", fill="y", padx=(0, 10))
 
-        tk.Frame(form_frame, text="Detalye ng Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+        st.container(form_frame, text="Detalye ng Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
 
-        tk.Frame(form_frame, text="Pangalan ng Serbisyo:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Pangalan ng Serbisyo:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_name = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_name.pack(fill="x", pady=(2, 8))
 
-        tk.Frame(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_price = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_price.pack(fill="x", pady=(2, 12))
 
-        selected_item_id = tk.IntVar(value=0)
+        selected_item_id = st.session_state.var(value=0)
 
         def clear_form():
             selected_item_id.set(0)
-            e_name.delete(0, tk.END)
-            e_price.delete(0, tk.END)
+            e_name.delete(0, st.session_state)
+            e_price.delete(0, st.session_state)
 
         def refresh_serv_tree():
             for r in tree_all.get_children():
@@ -419,20 +419,20 @@ class RTechComputerCenterPOS:
         btn_clr = st.button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
         btn_clr.pack(fill="x", pady=(10, 2))
 
-        right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
+        right_outer_frame = st.container(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
         right_outer_frame.pack(side="right", fill="both", expand=True)
 
-        right_top_bar = tk.Frame(right_outer_frame, bg="white")
+        right_top_bar = st.container(right_outer_frame, bg="white")
         right_top_bar.pack(fill="x", padx=5, pady=5)
 
-        tk.Frame(right_top_bar, text="Listahan ng mga Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        st.container(right_top_bar, text="Listahan ng mga Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
         btn_export_serv = st.button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_services_to_excel)
         btn_export_serv.pack(side="right")
 
-        tree_container = tk.Frame(right_outer_frame, bg="white")
+        tree_container = st.container(right_outer_frame, bg="white")
         tree_container.pack(fill="both", expand=True)
 
-        tree_all = ttk.Treeview(tree_container, columns=("ID", "Name", "Price"), show="headings")
+        tree_all = st.data_editor(tree_container, columns=("ID", "Name", "Price"), show="headings")
         tree_all.heading("ID", text="ID")
         tree_all.heading("Name", text="Service Name")
         tree_all.heading("Price", text="Price")
@@ -441,7 +441,7 @@ class RTechComputerCenterPOS:
         tree_all.column("Name", width=280)
         tree_all.column("Price", width=100, anchor="e")
 
-        sc_serv = ttk.Scrollbar(tree_container, orient="vertical", command=tree_all.yview)
+        sc_serv = st.container(tree_container, orient="vertical", command=tree_all.yview)
         tree_all.configure(yscrollcommand=sc_serv.set)
 
         tree_all.pack(side="left", fill="both", expand=True)
@@ -458,9 +458,9 @@ class RTechComputerCenterPOS:
             self.cursor.execute("SELECT name, price FROM items WHERE id=?", (item_id,))
             res = self.cursor.fetchone()
             if res:
-                e_name.delete(0, tk.END)
+                e_name.delete(0, st.session_state)
                 e_name.insert(0, res[0])
-                e_price.delete(0, tk.END)
+                e_price.delete(0, st.session_state)
                 e_price.insert(0, str(res[1]))
 
         tree_all.bind("<<TreeviewSelect>>", on_select_item)
@@ -476,42 +476,42 @@ class RTechComputerCenterPOS:
         inv_win.grab_set()
         inv_win.configure(bg="#f1f5f9")
 
-        tk.Frame(inv_win, text="📦 Manage Inventory", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        st.container(inv_win, text="📦 Manage Inventory", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
-        main_container = tk.Frame(inv_win, bg="#f1f5f9")
+        main_container = st.container(inv_win, bg="#f1f5f9")
         main_container.pack(fill="both", expand=True, padx=15, pady=5)
 
-        form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
+        form_frame = st.container(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frame.pack(side="left", fill="y", padx=(0, 10))
 
-        tk.Frame(form_frame, text="Detalye ng Inventory Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+        st.container(form_frame, text="Detalye ng Inventory Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
 
-        tk.Frame(form_frame, text="Pangalan:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Pangalan:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_name = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_name.pack(fill="x", pady=(2, 8))
 
-        tk.Frame(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_price = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_price.pack(fill="x", pady=(2, 8))
 
-        tk.Frame(form_frame, text="Stock:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Stock:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_stock = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_stock.pack(fill="x", pady=(2, 8))
         e_stock.insert(0, "0")
 
-        tk.Frame(form_frame, text="Barcode (Opsiyonal):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        st.container(form_frame, text="Barcode (Opsiyonal):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
         e_barcode = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_barcode.pack(fill="x", pady=(2, 12))
 
-        selected_item_id = tk.IntVar(value=0)
+        selected_item_id = st.session_state.var(value=0)
 
         def clear_form():
             selected_item_id.set(0)
-            e_name.delete(0, tk.END)
-            e_price.delete(0, tk.END)
-            e_stock.delete(0, tk.END)
+            e_name.delete(0, st.session_state)
+            e_price.delete(0, st.session_state)
+            e_stock.delete(0, st.session_state)
             e_stock.insert(0, "0")
-            e_barcode.delete(0, tk.END)
+            e_barcode.delete(0, st.session_state)
 
         def refresh_inv_tree():
             for r in tree_all.get_children():
@@ -630,20 +630,20 @@ class RTechComputerCenterPOS:
         btn_clr = st.button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
         btn_clr.pack(fill="x", pady=(10, 2))
 
-        right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
+        right_outer_frame = st.container(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
         right_outer_frame.pack(side="right", fill="both", expand=True)
 
-        right_top_bar = tk.Frame(right_outer_frame, bg="white")
+        right_top_bar = st.container(right_outer_frame, bg="white")
         right_top_bar.pack(fill="x", padx=5, pady=5)
 
-        tk.Frame(right_top_bar, text="Listahan ng Inventory", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        st.container(right_top_bar, text="Listahan ng Inventory", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
         btn_export_inv = st.button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_inventory_to_excel)
         btn_export_inv.pack(side="right")
 
-        tree_container = tk.Frame(right_outer_frame, bg="white")
+        tree_container = st.container(right_outer_frame, bg="white")
         tree_container.pack(fill="both", expand=True)
 
-        tree_all = ttk.Treeview(tree_container, columns=("ID", "Name", "Price", "Stock", "Barcode"), show="headings")
+        tree_all = st.data_editor(tree_container, columns=("ID", "Name", "Price", "Stock", "Barcode"), show="headings")
         tree_all.heading("ID", text="ID")
         tree_all.heading("Name", text="Item Name")
         tree_all.heading("Price", text="Price")
@@ -656,7 +656,7 @@ class RTechComputerCenterPOS:
         tree_all.column("Stock", width=60, anchor="center")
         tree_all.column("Barcode", width=100, anchor="center")
 
-        sc_all = ttk.Scrollbar(tree_container, orient="vertical", command=tree_all.yview)
+        sc_all = st.container(tree_container, orient="vertical", command=tree_all.yview)
         tree_all.configure(yscrollcommand=sc_all.set)
 
         tree_all.pack(side="left", fill="both", expand=True)
@@ -673,13 +673,13 @@ class RTechComputerCenterPOS:
             self.cursor.execute("SELECT name, price, stock, barcode FROM items WHERE id=?", (item_id,))
             res = self.cursor.fetchone()
             if res:
-                e_name.delete(0, tk.END)
+                e_name.delete(0, st.session_state)
                 e_name.insert(0, res[0])
-                e_price.delete(0, tk.END)
+                e_price.delete(0, st.session_state)
                 e_price.insert(0, str(res[1]))
-                e_stock.delete(0, tk.END)
+                e_stock.delete(0, st.session_state)
                 e_stock.insert(0, str(res[2]))
-                e_barcode.delete(0, tk.END)
+                e_barcode.delete(0, st.session_state)
                 if res[3]:
                     e_barcode.insert(0, res[3])
 
@@ -690,27 +690,27 @@ class RTechComputerCenterPOS:
     # LAYOUT & GUI
     # ---------------------------------------------------------
     def create_layout(self):
-        header = tk.Frame(self.root, bg="#0b132b", height=70)
+        header = st.container(self.root, bg="#0b132b", height=70)
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
-        brand_frame = tk.Frame(header, bg="#0b132b")
+        brand_frame = st.container(header, bg="#0b132b")
         brand_frame.pack(side="left", padx=20, pady=5)
 
         if self.logo_img:
-            logo_lbl = tk.Frame(brand_frame, image=self.logo_img, bg="#0b132b")
+            logo_lbl = st.container(brand_frame, image=self.logo_img, bg="#0b132b")
             logo_lbl.pack(side="left", padx=(0, 15))
 
-        title_box = tk.Frame(brand_frame, bg="#0b132b")
+        title_box = st.container(brand_frame, bg="#0b132b")
         title_box.pack(side="left")
 
-        self.lbl_title_store = tk.Frame(title_box, text=self.store_name, font=("Segoe UI", 16, "bold"), fg="#38bdf8", bg="#0b132b")
+        self.lbl_title_store = st.container(title_box, text=self.store_name, font=("Segoe UI", 16, "bold"), fg="#38bdf8", bg="#0b132b")
         self.lbl_title_store.pack(anchor="w")
 
-        self.lbl_subtitle_tax = tk.Frame(title_box, text=f"POS SYSTEM (TIN: {self.tin_number} | Serv: {self.tax_rate_services}% | Inv: {self.tax_rate_inventory}%)", font=("Segoe UI", 8, "bold"), fg="#94a3b8", bg="#0b132b")
+        self.lbl_subtitle_tax = st.container(title_box, text=f"POS SYSTEM (TIN: {self.tin_number} | Serv: {self.tax_rate_services}% | Inv: {self.tax_rate_inventory}%)", font=("Segoe UI", 8, "bold"), fg="#94a3b8", bg="#0b132b")
         self.lbl_subtitle_tax.pack(anchor="w")
 
-        nav_btns = tk.Frame(header, bg="#0b132b")
+        nav_btns = st.container(header, bg="#0b132b")
         nav_btns.pack(side="right", padx=20, pady=15)
 
         tax_cfg_btn = st.button(nav_btns, text="⚙️ Tax & Store Settings", font=("Segoe UI", 10, "bold"), 
@@ -728,17 +728,17 @@ class RTechComputerCenterPOS:
                                padx=12, command=self.open_inventory_manager)
         manage_btn.pack(side="left")
 
-        self.main_frame = tk.Frame(self.root, bg="#f1f5f9")
+        self.main_frame = st.container(self.root, bg="#f1f5f9")
         self.main_frame.pack(fill="both", expand=True, padx=15, pady=15)
 
-        left_panel = tk.Frame(self.main_frame, bg="#f1f5f9")
+        left_panel = st.container(self.main_frame, bg="#f1f5f9")
         left_panel.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
         # BARCODE SCANNER SECTION
-        barcode_frame = tk.Frame(left_panel, bg="white", bd=1, relief="solid", padx=10, pady=8)
+        barcode_frame = st.container(left_panel, bg="white", bd=1, relief="solid", padx=10, pady=8)
         barcode_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Frame(barcode_frame, text="📷 BARCODE SCANNER / QUICK SEARCH:", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left", padx=(0, 10))
+        st.container(barcode_frame, text="📷 BARCODE SCANNER / QUICK SEARCH:", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left", padx=(0, 10))
          
         self.entry_barcode = st.text_input(barcode_frame, font=("Segoe UI", 11, "bold"), bd=1, relief="solid")
         self.entry_barcode.pack(side="left", fill="x", expand=True, padx=(0, 10))
@@ -748,22 +748,22 @@ class RTechComputerCenterPOS:
         btn_scan.pack(side="right")
 
         # Tabs
-        self.notebook = ttk.Notebook(left_panel)
+        self.notebook = st.tabs(left_panel)
         self.notebook.pack(fill="both", expand=True)
 
-        self.services_frame = ttk.Frame(self.notebook)
+        self.services_frame = tst.container(self.notebook)
         self.notebook.add(self.services_frame, text="    🖨️ Services    ")
 
-        self.inventory_frame = ttk.Frame(self.notebook)
+        self.inventory_frame = tst.container(self.notebook)
         self.notebook.add(self.inventory_frame, text="    📦 Inventory    ")
 
-        self.sales_tab_frame = ttk.Frame(self.notebook)
+        self.sales_tab_frame = tst.container(self.notebook)
         self.notebook.add(self.sales_tab_frame, text="    📊 Daily Sales    ")
 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_change)
 
         # Services View
-        self.tree_services = ttk.Treeview(self.services_frame, columns=("ID", "Name", "Price"), show="headings", selectmode="browse")
+        self.tree_services = st.data_editor(self.services_frame, columns=("ID", "Name", "Price"), show="headings", selectmode="browse")
         self.tree_services.heading("ID", text="ID")
         self.tree_services.heading("Name", text="Service Name")
         self.tree_services.heading("Price", text="Price (₱)")
@@ -771,7 +771,7 @@ class RTechComputerCenterPOS:
         self.tree_services.column("Name", width=350)
         self.tree_services.column("Price", width=120, anchor="e")
          
-        sc_service = ttk.Scrollbar(self.services_frame, orient="vertical", command=self.tree_services.yview)
+        sc_service = st.container(self.services_frame, orient="vertical", command=self.tree_services.yview)
         self.tree_services.configure(yscrollcommand=sc_service.set)
          
         self.tree_services.pack(side="left", fill="both", expand=True, padx=(5,0), pady=5)
@@ -779,7 +779,7 @@ class RTechComputerCenterPOS:
         self.tree_services.bind("<Double-1>", lambda e: self.add_selected_to_cart(self.tree_services, "Services"))
 
         # Inventory View
-        self.tree_inventory = ttk.Treeview(self.inventory_frame, columns=("ID", "Barcode", "Name", "Price", "Stock"), show="headings", selectmode="browse")
+        self.tree_inventory = st.data_editor(self.inventory_frame, columns=("ID", "Barcode", "Name", "Price", "Stock"), show="headings", selectmode="browse")
         self.tree_inventory.heading("ID", text="ID")
         self.tree_inventory.heading("Barcode", text="Barcode")
         self.tree_inventory.heading("Name", text="Item Name")
@@ -792,7 +792,7 @@ class RTechComputerCenterPOS:
         self.tree_inventory.column("Price", width=90, anchor="e")
         self.tree_inventory.column("Stock", width=80, anchor="center")
          
-        sc_inv = ttk.Scrollbar(self.inventory_frame, orient="vertical", command=self.tree_inventory.yview)
+        sc_inv = st.container(self.inventory_frame, orient="vertical", command=self.tree_inventory.yview)
         self.tree_inventory.configure(yscrollcommand=sc_inv.set)
          
         self.tree_inventory.pack(side="left", fill="both", expand=True, padx=(5,0), pady=5)
@@ -808,24 +808,24 @@ class RTechComputerCenterPOS:
         add_btn.pack(fill="x", pady=(15, 0))
 
         # RIGHT PANEL: Cart & Checkout
-        self.right_panel = tk.Frame(self.main_frame, bg="white", bd=0, relief="flat", width=460)
+        self.right_panel = st.container(self.main_frame, bg="white", bd=0, relief="flat", width=460)
         self.right_panel.pack(side="right", fill="both")
         self.right_panel.pack_propagate(False)
 
-        cart_header = tk.Frame(self.right_panel, bg="#f8fafc", pady=10, padx=10)
+        cart_header = st.container(self.right_panel, bg="#f8fafc", pady=10, padx=10)
         cart_header.pack(fill="x")
          
-        tk.Frame(cart_header, text="🛒 Current Order", font=("Segoe UI", 13, "bold"), bg="#f8fafc", fg="#1e293b", anchor="w").pack(side="left")
+        st.container(cart_header, text="🛒 Current Order", font=("Segoe UI", 13, "bold"), bg="#f8fafc", fg="#1e293b", anchor="w").pack(side="left")
          
         clear_btn = st.button(cart_header, text="Clear All", font=("Segoe UI", 9), bg="#ef4444", fg="white", 
                               relief="flat", cursor="hand2", padx=10, command=self.clear_cart)
         clear_btn.pack(side="right")
 
-        cart_tree_frame = tk.Frame(self.right_panel, bg="white", padx=10, pady=5)
+        cart_tree_frame = st.container(self.right_panel, bg="white", padx=10, pady=5)
         cart_tree_frame.pack(fill="both", expand=True)
 
         # In-update ang Cart Treeview para isama ang Discount column
-        self.cart_tree = ttk.Treeview(cart_tree_frame, columns=("Name", "Qty", "Price", "Disc", "Subtotal"), show="headings", height=7)
+        self.cart_tree = st.data_editor(cart_tree_frame, columns=("Name", "Qty", "Price", "Disc", "Subtotal"), show="headings", height=7)
         self.cart_tree.heading("Name", text="Item")
         self.cart_tree.heading("Qty", text="Qty")
         self.cart_tree.heading("Price", text="Price")
@@ -838,7 +838,7 @@ class RTechComputerCenterPOS:
         self.cart_tree.column("Disc", width=75, anchor="center")
         self.cart_tree.column("Subtotal", width=80, anchor="e")
          
-        sc_cart = ttk.Scrollbar(cart_tree_frame, orient="vertical", command=self.cart_tree.yview)
+        sc_cart = st.container(cart_tree_frame, orient="vertical", command=self.cart_tree.yview)
         self.cart_tree.configure(yscrollcommand=sc_cart.set)
          
         self.cart_tree.pack(side="left", fill="both", expand=True)
@@ -847,7 +847,7 @@ class RTechComputerCenterPOS:
         # Double-click para baguhin o maglagay ng discount sa item sa cart
         self.cart_tree.bind("<Double-1>", self.open_edit_discount_window)
 
-        cart_ctrls = tk.Frame(self.right_panel, bg="white", padx=10, pady=2)
+        cart_ctrls = st.container(self.right_panel, bg="white", padx=10, pady=2)
         cart_ctrls.pack(fill="x")
 
         rem_btn = st.button(cart_ctrls, text="❌ Remove Selected Item", font=("Segoe UI", 9), bg="#64748b", fg="white", 
@@ -859,46 +859,46 @@ class RTechComputerCenterPOS:
         disc_btn.pack(side="right", anchor="e")
 
         # --- CUSTOMER TYPE SELECTION ---
-        cust_type_frame = tk.Frame(self.right_panel, bg="white", padx=10, pady=5)
+        cust_type_frame = st.container(self.right_panel, bg="white", padx=10, pady=5)
         cust_type_frame.pack(fill="x")
         
-        tk.Frame(cust_type_frame, text="Customer Type:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        st.container(cust_type_frame, text="Customer Type:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         self.customer_type_var = tk.StringVar(value="Regular Customer")
         
-        cust_combo = ttk.Combobox(cust_type_frame, textvariable=self.customer_type_var, values=["Regular Customer", "Government Customer"], state="readonly", font=("Segoe UI", 9))
+        cust_combo = st.selectbox(cust_type_frame, textvariable=self.customer_type_var, values=["Regular Customer", "Government Customer"], state="readonly", font=("Segoe UI", 9))
         cust_combo.pack(fill="x", pady=(2, 2))
         cust_combo.bind("<<ComboboxSelected>>", lambda e: self.update_cart_display())
 
         # PAYMENT BREAKDOWN FRAME
-        pay_frame = tk.Frame(self.right_panel, bg="#f8fafc", bd=1, relief="solid", padx=12, pady=8)
+        pay_frame = st.container(self.right_panel, bg="#f8fafc", bd=1, relief="solid", padx=12, pady=8)
         pay_frame.pack(fill="x", padx=10, pady=5)
         pay_frame.columnconfigure(1, weight=1)
 
-        tk.Frame(pay_frame, text="Subtotal:", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=0, column=0, sticky="w")
-        self.lbl_subtotal = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b")
+        st.container(pay_frame, text="Subtotal:", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=0, column=0, sticky="w")
+        self.lbl_subtotal = st.container(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b")
         self.lbl_subtotal.grid(row=0, column=1, sticky="e")
 
-        tk.Frame(pay_frame, text="Services Tax (4%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=1, column=0, sticky="w")
-        self.lbl_tax_services = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
+        st.container(pay_frame, text="Services Tax (4%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=1, column=0, sticky="w")
+        self.lbl_tax_services = st.container(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
         self.lbl_tax_services.grid(row=1, column=1, sticky="e")
 
-        tk.Frame(pay_frame, text="Inventory Tax (5%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=2, column=0, sticky="w")
-        self.lbl_tax_inventory = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
+        st.container(pay_frame, text="Inventory Tax (5%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=2, column=0, sticky="w")
+        self.lbl_tax_inventory = st.container(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
         self.lbl_tax_inventory.grid(row=2, column=1, sticky="e")
 
-        ttk.Separator(pay_frame, orient="horizontal").grid(row=3, column=0, columnspan=2, sticky="ew", pady=4)
+       st.divider(pay_frame, orient="horizontal").grid(row=3, column=0, columnspan=2, sticky="ew", pady=4)
 
-        tk.Frame(pay_frame, text="TOTAL DUE:", font=("Segoe UI", 11, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=4, column=0, sticky="w")
-        self.lbl_total = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 15, "bold"), fg="#16a34a", bg="#f8fafc")
+        st.container(pay_frame, text="TOTAL DUE:", font=("Segoe UI", 11, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=4, column=0, sticky="w")
+        self.lbl_total = st.container(pay_frame, text="₱ 0.00", font=("Segoe UI", 15, "bold"), fg="#16a34a", bg="#f8fafc")
         self.lbl_total.grid(row=4, column=1, sticky="e")
 
-        tk.Frame(pay_frame, text="Cash Tendered (₱):", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=5, column=0, sticky="w", pady=(5,0))
+        st.container(pay_frame, text="Cash Tendered (₱):", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=5, column=0, sticky="w", pady=(5,0))
         self.entry_cash = st.text_input(pay_frame, font=("Segoe UI", 11, "bold"), width=12, justify="right", bd=1, relief="solid")
         self.entry_cash.grid(row=5, column=1, sticky="e", pady=(5,0))
         self.entry_cash.bind("<KeyRelease>", self.calculate_change)
 
-        tk.Frame(pay_frame, text="CHANGE:", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=6, column=0, sticky="w", pady=(5,0))
-        self.lbl_change = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 13, "bold"), fg="#0284c7", bg="#f8fafc")
+        st.container(pay_frame, text="CHANGE:", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=6, column=0, sticky="w", pady=(5,0))
+        self.lbl_change = st.container(pay_frame, text="₱ 0.00", font=("Segoe UI", 13, "bold"), fg="#0284c7", bg="#f8fafc")
         self.lbl_change.grid(row=6, column=1, sticky="e", pady=(5,0))
 
         checkout_btn = st.button(self.right_panel, text="✔ COMPLETE SALE / PRINT RECEIPT", font=("Segoe UI", 11, "bold"), 
@@ -910,18 +910,18 @@ class RTechComputerCenterPOS:
     # DAILY SALES & EXPORT FUNCTIONALITY
     # ---------------------------------------------------------
     def build_sales_tab(self):
-        sales_container = tk.Frame(self.sales_tab_frame, bg="white", padx=10, pady=10)
+        sales_container = st.container(self.sales_tab_frame, bg="white", padx=10, pady=10)
         sales_container.pack(fill="both", expand=True)
 
-        header_frame = tk.Frame(sales_container, bg="white")
+        header_frame = st.container(sales_container, bg="white")
         header_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Frame(header_frame, text="📊 Listahan ng Araw-araw na Benta (Daily Sales)", font=("Segoe UI", 11, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        st.container(header_frame, text="📊 Listahan ng Araw-araw na Benta (Daily Sales)", font=("Segoe UI", 11, "bold"), bg="white", fg="#0284c7").pack(side="left")
 
-        action_frame = tk.Frame(sales_container, bg="white")
+        action_frame = st.container(sales_container, bg="white")
         action_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Frame(action_frame, text="Petsa (YYYY-MM-DD):", font=("Segoe UI", 9, "bold"), bg="white", fg="#334155").pack(side="left", padx=(0, 5))
+        st.container(action_frame, text="Petsa (YYYY-MM-DD):", font=("Segoe UI", 9, "bold"), bg="white", fg="#334155").pack(side="left", padx=(0, 5))
         
         self.entry_sales_date = st.text_input(action_frame, font=("Segoe UI", 9), width=12, bd=1, relief="solid")
         self.entry_sales_date.pack(side="left", padx=(0, 5))
@@ -943,7 +943,7 @@ class RTechComputerCenterPOS:
                                     command=self.delete_selected_sale)
         delete_sale_btn.pack(side="right", padx=(0, 10))
 
-        self.tree_sales = ttk.Treeview(sales_container, columns=("ID", "DateTime", "Subtotal", "Non-VAT", "VAT", "Total", "Cash", "Change"), show="headings")
+        self.tree_sales = st.data_editor(sales_container, columns=("ID", "DateTime", "Subtotal", "Non-VAT", "VAT", "Total", "Cash", "Change"), show="headings")
         self.tree_sales.heading("ID", text="Sale ID")
         self.tree_sales.heading("DateTime", text="Petsa at Oras")
         self.tree_sales.heading("Subtotal", text="Subtotal")
@@ -962,7 +962,7 @@ class RTechComputerCenterPOS:
         self.tree_sales.column("Cash", width=90, anchor="e")
         self.tree_sales.column("Change", width=90, anchor="e")
 
-        sc_sales = ttk.Scrollbar(sales_container, orient="vertical", command=self.tree_sales.yview)
+        sc_sales = st.container(sales_container, orient="vertical", command=self.tree_sales.yview)
         self.tree_sales.configure(yscrollcommand=sc_sales.set)
 
         self.tree_sales.pack(side="left", fill="both", expand=True)
@@ -1129,7 +1129,7 @@ class RTechComputerCenterPOS:
 
         self.cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode=?", (code,))
         db_item = self.cursor.fetchone()
-        self.entry_barcode.delete(0, tk.END)
+        self.entry_barcode.delete(0, st.session_state)
 
         if not db_item:
             messagebox.showerror("Not Found", f"Walang item na nahanap para sa barcode / search: '{code}'")
@@ -1177,18 +1177,18 @@ class RTechComputerCenterPOS:
         disc_win.grab_set()
         disc_win.configure(bg="#f1f5f9")
 
-        tk.Frame(disc_win, text=f"🏷️ I-apply ang Discount", font=("Segoe UI", 11, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        st.container(disc_win, text=f"🏷️ I-apply ang Discount", font=("Segoe UI", 11, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
-        form_frm = tk.Frame(disc_win, bg="white", padx=12, pady=12, bd=1, relief="solid")
+        form_frm = st.container(disc_win, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frm.pack(fill="both", expand=True, padx=15, pady=5)
 
-        tk.Frame(form_frm, text="Uri ng Discount:", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        st.container(form_frm, text="Uri ng Discount:", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
         
         dtype_var = tk.StringVar(value=item['discount_type'])
-        combo_dtype = ttk.Combobox(form_frm, textvariable=dtype_var, values=["none", "percentage", "fixed"], state="readonly", font=("Segoe UI", 9))
+        combo_dtype = st.selectbox(form_frm, textvariable=dtype_var, values=["none", "percentage", "fixed"], state="readonly", font=("Segoe UI", 9))
         combo_dtype.pack(fill="x", pady=(2, 8))
 
-        tk.Frame(form_frm, text="Halaga ng Discount (% o ₱):", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        st.container(form_frm, text="Halaga ng Discount (% o ₱):", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
         e_val = st.text_input(form_frm, font=("Segoe UI", 10))
         e_val.pack(fill="x", pady=(2, 12))
         e_val.insert(0, str(item['discount_value']))
@@ -1289,7 +1289,7 @@ class RTechComputerCenterPOS:
     def clear_cart(self):
         self.cart = []
         self.update_cart_display()
-        self.entry_cash.delete(0, tk.END)
+        self.entry_cash.delete(0, st.session_state)
         self.lbl_change.config(text="₱ 0.00")
 
     def calculate_change(self, event=None):
@@ -1383,7 +1383,7 @@ class RTechComputerCenterPOS:
         txt_area.insert("1.0", receipt_text)
         txt_area.config(state="disabled")
 
-        btn_frame = tk.Frame(receipt_win, bg="#f1f5f9", pady=10)
+        btn_frame = st.container(receipt_win, bg="#f1f5f9", pady=10)
         btn_frame.pack(fill="x")
 
         def save_and_close():
