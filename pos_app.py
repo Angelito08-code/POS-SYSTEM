@@ -40,7 +40,7 @@ class RTechComputerCenterPOS:
         self.root.title(f"{self.store_name} POS SYSTEM")
 
         # Theme Configuration
-        self.style = ttk.Style()
+        self.style = st.Style()
         if os.name == 'nt':
             self.style.theme_use('clam')
          
