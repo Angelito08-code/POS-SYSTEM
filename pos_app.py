@@ -84,7 +84,7 @@ class RTechComputerCenterPOS:
                 offset = ((canvas_size[0] - logo_size[0]) // 2, (canvas_size[1] - logo_size[1]) // 2)
                 canvas.paste(logo, offset, mask=alpha)
 
-                self.logo_img = ImageTk.PhotoImage(canvas)
+                self.logo_img = ImagePhotoImage(canvas)
             except Exception as e:
                 print(f"Error sa pag-load ng logo: {e}")
 
@@ -197,34 +197,34 @@ class RTechComputerCenterPOS:
     # TAX & STORE SETTINGS WINDOW
     # ---------------------------------------------------------
     def open_tax_settings(self):
-        settings_win = tk.Toplevel(self.root)
+        settings_win = Toplevel(self.root)
         settings_win.title("Tax & Store Settings")
         settings_win.geometry("420x380")
         settings_win.grab_set()
         settings_win.configure(bg="#f1f5f9")
 
-        tk.Label(settings_win, text="⚙️ Store & Tax Settings", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        tk.Frame(settings_win, text="⚙️ Store & Tax Settings", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
         form_frame = tk.Frame(settings_win, bg="white", padx=15, pady=15, bd=1, relief="solid")
         form_frame.pack(fill="both", expand=True, padx=15, pady=5)
 
-        tk.Label(form_frame, text="Store Name:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
-        entry_store = tk.Entry(form_frame, font=("Segoe UI", 10), width=30)
+        tk.Frame(form_frame, text="Store Name:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        entry_store = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_store.pack(fill="x", pady=(2, 8))
         entry_store.insert(0, self.store_name)
 
-        tk.Label(form_frame, text="TIN Number:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
-        entry_tin = tk.Entry(form_frame, font=("Segoe UI", 10), width=30)
+        tk.Frame(form_frame, text="TIN Number:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        entry_tin = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tin.pack(fill="x", pady=(2, 8))
         entry_tin.insert(0, self.tin_number)
 
-        tk.Label(form_frame, text="Services Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
-        entry_tax_serv = tk.Entry(form_frame, font=("Segoe UI", 10), width=30)
+        tk.Frame(form_frame, text="Services Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        entry_tax_serv = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tax_serv.pack(fill="x", pady=(2, 8))
         entry_tax_serv.insert(0, str(self.tax_rate_services))
 
-        tk.Label(form_frame, text="Inventory Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
-        entry_tax_inv = tk.Entry(form_frame, font=("Segoe UI", 10), width=30)
+        tk.Frame(form_frame, text="Inventory Tax Rate (%):", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        entry_tax_inv = st.text_input(form_frame, font=("Segoe UI", 10), width=30)
         entry_tax_inv.pack(fill="x", pady=(2, 12))
         entry_tax_inv.insert(0, str(self.tax_rate_inventory))
 
@@ -260,7 +260,7 @@ class RTechComputerCenterPOS:
             except ValueError:
                 messagebox.showerror("Error", "Mali ang format ng Tax Rate. Maglagay ng tamang numero.", parent=settings_win)
 
-        btn_save = tk.Button(form_frame, text="💾 I-save ang Settings", font=("Segoe UI", 10, "bold"), bg="#22c55e", fg="white", relief="flat", cursor="hand2", command=save_changes)
+        btn_save = st.button(form_frame, text="💾 I-save ang Settings", font=("Segoe UI", 10, "bold"), bg="#22c55e", fg="white", relief="flat", cursor="hand2", command=save_changes)
         btn_save.pack(fill="x", pady=(5, 0))
 
     # ---------------------------------------------------------
@@ -273,7 +273,7 @@ class RTechComputerCenterPOS:
         serv_win.grab_set()
         serv_win.configure(bg="#f1f5f9")
 
-        tk.Label(serv_win, text="🖨️ Manage Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        tk.Frame(serv_win, text="🖨️ Manage Services", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
         main_container = tk.Frame(serv_win, bg="#f1f5f9")
         main_container.pack(fill="both", expand=True, padx=15, pady=5)
@@ -281,14 +281,14 @@ class RTechComputerCenterPOS:
         form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frame.pack(side="left", fill="y", padx=(0, 10))
 
-        tk.Label(form_frame, text="Detalye ng Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+        tk.Frame(form_frame, text="Detalye ng Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
 
-        tk.Label(form_frame, text="Pangalan ng Serbisyo:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_name = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Pangalan ng Serbisyo:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_name = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_name.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_price = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_price = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_price.pack(fill="x", pady=(2, 12))
 
         selected_item_id = tk.IntVar(value=0)
@@ -396,16 +396,16 @@ class RTechComputerCenterPOS:
                 except Exception as e:
                     messagebox.showerror("Export Error", f"Nagka-error sa pag-export: {e}", parent=serv_win)
 
-        btn_add = tk.Button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
+        btn_add = st.button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
         btn_add.pack(fill="x", pady=2)
 
-        btn_upd = tk.Button(form_frame, text="✏️ I-update", font=("Segoe UI", 9, "bold"), bg="#ca8a04", fg="white", relief="flat", cursor="hand2", command=update_item_db)
+        btn_upd = st.button(form_frame, text="✏️ I-update", font=("Segoe UI", 9, "bold"), bg="#ca8a04", fg="white", relief="flat", cursor="hand2", command=update_item_db)
         btn_upd.pack(fill="x", pady=2)
 
-        btn_del = tk.Button(form_frame, text="🗑️ Tanggalin", font=("Segoe UI", 9, "bold"), bg="#ef4444", fg="white", relief="flat", cursor="hand2", command=delete_item_db)
+        btn_del = st.button(form_frame, text="🗑️ Tanggalin", font=("Segoe UI", 9, "bold"), bg="#ef4444", fg="white", relief="flat", cursor="hand2", command=delete_item_db)
         btn_del.pack(fill="x", pady=2)
 
-        btn_clr = tk.Button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
+        btn_clr = st.button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
         btn_clr.pack(fill="x", pady=(10, 2))
 
         right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
@@ -414,8 +414,8 @@ class RTechComputerCenterPOS:
         right_top_bar = tk.Frame(right_outer_frame, bg="white")
         right_top_bar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(right_top_bar, text="Listahan ng mga Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
-        btn_export_serv = tk.Button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_services_to_excel)
+        tk.Frame(right_top_bar, text="Listahan ng mga Serbisyo", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        btn_export_serv = st.button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_services_to_excel)
         btn_export_serv.pack(side="right")
 
         tree_container = tk.Frame(right_outer_frame, bg="white")
@@ -465,7 +465,7 @@ class RTechComputerCenterPOS:
         inv_win.grab_set()
         inv_win.configure(bg="#f1f5f9")
 
-        tk.Label(inv_win, text="📦 Manage Inventory", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        tk.Frame(inv_win, text="📦 Manage Inventory", font=("Segoe UI", 13, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
         main_container = tk.Frame(inv_win, bg="#f1f5f9")
         main_container.pack(fill="both", expand=True, padx=15, pady=5)
@@ -473,23 +473,23 @@ class RTechComputerCenterPOS:
         form_frame = tk.Frame(main_container, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frame.pack(side="left", fill="y", padx=(0, 10))
 
-        tk.Label(form_frame, text="Detalye ng Inventory Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
+        tk.Frame(form_frame, text="Detalye ng Inventory Item", font=("Segoe UI", 10, "bold"), bg="white", fg="#1e293b").pack(anchor="w", pady=(0, 5))
 
-        tk.Label(form_frame, text="Pangalan:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_name = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Pangalan:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_name = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_name.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_price = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Presyo (₱):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_price = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_price.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frame, text="Stock:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_stock = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Stock:", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_stock = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_stock.pack(fill="x", pady=(2, 8))
         e_stock.insert(0, "0")
 
-        tk.Label(form_frame, text="Barcode (Opsiyonal):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
-        e_barcode = tk.Entry(form_frame, font=("Segoe UI", 10), width=25)
+        tk.Frame(form_frame, text="Barcode (Opsiyonal):", font=("Segoe UI", 9), bg="white").pack(anchor="w")
+        e_barcode = st.text_input(form_frame, font=("Segoe UI", 10), width=25)
         e_barcode.pack(fill="x", pady=(2, 12))
 
         selected_item_id = tk.IntVar(value=0)
@@ -607,16 +607,16 @@ class RTechComputerCenterPOS:
                 except Exception as e:
                     messagebox.showerror("Export Error", f"Nagka-error sa pag-export: {e}", parent=inv_win)
 
-        btn_add = tk.Button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
+        btn_add = st.button(form_frame, text="➕ Magdagdag", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", command=add_item_db)
         btn_add.pack(fill="x", pady=2)
 
-        btn_upd = tk.Button(form_frame, text="✏️ I-update", font=("Segoe UI", 9, "bold"), bg="#ca8a04", fg="white", relief="flat", cursor="hand2", command=update_item_db)
+        btn_upd = st.button(form_frame, text="✏️ I-update", font=("Segoe UI", 9, "bold"), bg="#ca8a04", fg="white", relief="flat", cursor="hand2", command=update_item_db)
         btn_upd.pack(fill="x", pady=2)
 
-        btn_del = tk.Button(form_frame, text="🗑️ Tanggalin", font=("Segoe UI", 9, "bold"), bg="#ef4444", fg="white", relief="flat", cursor="hand2", command=delete_item_db)
+        btn_del = st.button(form_frame, text="🗑️ Tanggalin", font=("Segoe UI", 9, "bold"), bg="#ef4444", fg="white", relief="flat", cursor="hand2", command=delete_item_db)
         btn_del.pack(fill="x", pady=2)
 
-        btn_clr = tk.Button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
+        btn_clr = st.button(form_frame, text="🧹 I-clear ang Form", font=("Segoe UI", 9), bg="#64748b", fg="white", relief="flat", cursor="hand2", command=clear_form)
         btn_clr.pack(fill="x", pady=(10, 2))
 
         right_outer_frame = tk.Frame(main_container, bg="white", padx=5, pady=5, bd=1, relief="solid")
@@ -625,8 +625,8 @@ class RTechComputerCenterPOS:
         right_top_bar = tk.Frame(right_outer_frame, bg="white")
         right_top_bar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(right_top_bar, text="Listahan ng Inventory", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
-        btn_export_inv = tk.Button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_inventory_to_excel)
+        tk.Frame(right_top_bar, text="Listahan ng Inventory", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        btn_export_inv = st.button(right_top_bar, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10, command=export_inventory_to_excel)
         btn_export_inv.pack(side="right")
 
         tree_container = tk.Frame(right_outer_frame, bg="white")
@@ -687,32 +687,32 @@ class RTechComputerCenterPOS:
         brand_frame.pack(side="left", padx=20, pady=5)
 
         if self.logo_img:
-            logo_lbl = tk.Label(brand_frame, image=self.logo_img, bg="#0b132b")
+            logo_lbl = tk.Frame(brand_frame, image=self.logo_img, bg="#0b132b")
             logo_lbl.pack(side="left", padx=(0, 15))
 
         title_box = tk.Frame(brand_frame, bg="#0b132b")
         title_box.pack(side="left")
 
-        self.lbl_title_store = tk.Label(title_box, text=self.store_name, font=("Segoe UI", 16, "bold"), fg="#38bdf8", bg="#0b132b")
+        self.lbl_title_store = tk.Frame(title_box, text=self.store_name, font=("Segoe UI", 16, "bold"), fg="#38bdf8", bg="#0b132b")
         self.lbl_title_store.pack(anchor="w")
 
-        self.lbl_subtitle_tax = tk.Label(title_box, text=f"POS SYSTEM (TIN: {self.tin_number} | Serv: {self.tax_rate_services}% | Inv: {self.tax_rate_inventory}%)", font=("Segoe UI", 8, "bold"), fg="#94a3b8", bg="#0b132b")
+        self.lbl_subtitle_tax = tk.Frame(title_box, text=f"POS SYSTEM (TIN: {self.tin_number} | Serv: {self.tax_rate_services}% | Inv: {self.tax_rate_inventory}%)", font=("Segoe UI", 8, "bold"), fg="#94a3b8", bg="#0b132b")
         self.lbl_subtitle_tax.pack(anchor="w")
 
         nav_btns = tk.Frame(header, bg="#0b132b")
         nav_btns.pack(side="right", padx=20, pady=15)
 
-        tax_cfg_btn = tk.Button(nav_btns, text="⚙️ Tax & Store Settings", font=("Segoe UI", 10, "bold"), 
+        tax_cfg_btn = st.button(nav_btns, text="⚙️ Tax & Store Settings", font=("Segoe UI", 10, "bold"), 
                                 bg="#0284c7", fg="white", relief="flat", cursor="hand2",
                                 padx=12, command=self.open_tax_settings)
         tax_cfg_btn.pack(side="left", padx=(0, 10))
 
-        serv_manage_btn = tk.Button(nav_btns, text="🖨️ Manage Services", font=("Segoe UI", 10, "bold"), 
+        serv_manage_btn = st.button(nav_btns, text="🖨️ Manage Services", font=("Segoe UI", 10, "bold"), 
                                     bg="#0284c7", fg="white", relief="flat", cursor="hand2",
                                     padx=12, command=self.open_services_manager)
         serv_manage_btn.pack(side="left", padx=(0, 10))
 
-        manage_btn = tk.Button(nav_btns, text="📦 Manage Inventory", font=("Segoe UI", 10, "bold"), 
+        manage_btn = st.button(nav_btns, text="📦 Manage Inventory", font=("Segoe UI", 10, "bold"), 
                                bg="#1d4ed8", fg="white", relief="flat", cursor="hand2",
                                padx=12, command=self.open_inventory_manager)
         manage_btn.pack(side="left")
@@ -727,13 +727,13 @@ class RTechComputerCenterPOS:
         barcode_frame = tk.Frame(left_panel, bg="white", bd=1, relief="solid", padx=10, pady=8)
         barcode_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Label(barcode_frame, text="📷 BARCODE SCANNER / QUICK SEARCH:", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left", padx=(0, 10))
+        tk.Frame(barcode_frame, text="📷 BARCODE SCANNER / QUICK SEARCH:", font=("Segoe UI", 10, "bold"), bg="white", fg="#0284c7").pack(side="left", padx=(0, 10))
          
-        self.entry_barcode = tk.Entry(barcode_frame, font=("Segoe UI", 11, "bold"), bd=1, relief="solid")
+        self.entry_barcode = st.text_input(barcode_frame, font=("Segoe UI", 11, "bold"), bd=1, relief="solid")
         self.entry_barcode.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.entry_barcode.bind("<Return>", self.on_barcode_scanned)
 
-        btn_scan = tk.Button(barcode_frame, text="Add / Scan", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", padx=15, command=self.on_barcode_scanned)
+        btn_scan = st.button(barcode_frame, text="Add / Scan", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", padx=15, command=self.on_barcode_scanned)
         btn_scan.pack(side="right")
 
         # Tabs
@@ -791,7 +791,7 @@ class RTechComputerCenterPOS:
         # Build Daily Sales Tab
         self.build_sales_tab()
 
-        add_btn = tk.Button(left_panel, text="+ Add Selected to Order (Double Click)", font=("Segoe UI", 11, "bold"), 
+        add_btn = st.button(left_panel, text="+ Add Selected to Order (Double Click)", font=("Segoe UI", 11, "bold"), 
                             bg="#0284c7", fg="white", relief="flat", cursor="hand2", pady=8,
                             command=self.add_active_tab_item)
         add_btn.pack(fill="x", pady=(15, 0))
@@ -804,9 +804,9 @@ class RTechComputerCenterPOS:
         cart_header = tk.Frame(self.right_panel, bg="#f8fafc", pady=10, padx=10)
         cart_header.pack(fill="x")
          
-        tk.Label(cart_header, text="🛒 Current Order", font=("Segoe UI", 13, "bold"), bg="#f8fafc", fg="#1e293b", anchor="w").pack(side="left")
+        tk.Frame(cart_header, text="🛒 Current Order", font=("Segoe UI", 13, "bold"), bg="#f8fafc", fg="#1e293b", anchor="w").pack(side="left")
          
-        clear_btn = tk.Button(cart_header, text="Clear All", font=("Segoe UI", 9), bg="#ef4444", fg="white", 
+        clear_btn = st.button(cart_header, text="Clear All", font=("Segoe UI", 9), bg="#ef4444", fg="white", 
                               relief="flat", cursor="hand2", padx=10, command=self.clear_cart)
         clear_btn.pack(side="right")
 
@@ -839,11 +839,11 @@ class RTechComputerCenterPOS:
         cart_ctrls = tk.Frame(self.right_panel, bg="white", padx=10, pady=2)
         cart_ctrls.pack(fill="x")
 
-        rem_btn = tk.Button(cart_ctrls, text="❌ Remove Selected Item", font=("Segoe UI", 9), bg="#64748b", fg="white", 
+        rem_btn = st.button(cart_ctrls, text="❌ Remove Selected Item", font=("Segoe UI", 9), bg="#64748b", fg="white", 
                             relief="flat", cursor="hand2", command=self.remove_cart_item)
         rem_btn.pack(side="left", anchor="w")
         
-        disc_btn = tk.Button(cart_ctrls, text="🏷️ Edit Discount", font=("Segoe UI", 9), bg="#d97706", fg="white", 
+        disc_btn = st.button(cart_ctrls, text="🏷️ Edit Discount", font=("Segoe UI", 9), bg="#d97706", fg="white", 
                              relief="flat", cursor="hand2", command=lambda: self.open_edit_discount_window(None))
         disc_btn.pack(side="right", anchor="e")
 
@@ -851,7 +851,7 @@ class RTechComputerCenterPOS:
         cust_type_frame = tk.Frame(self.right_panel, bg="white", padx=10, pady=5)
         cust_type_frame.pack(fill="x")
         
-        tk.Label(cust_type_frame, text="Customer Type:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
+        tk.Frame(cust_type_frame, text="Customer Type:", font=("Segoe UI", 9, "bold"), bg="white", fg="#1e293b").pack(anchor="w")
         self.customer_type_var = tk.StringVar(value="Regular Customer")
         
         cust_combo = ttk.Combobox(cust_type_frame, textvariable=self.customer_type_var, values=["Regular Customer", "Government Customer"], state="readonly", font=("Segoe UI", 9))
@@ -863,34 +863,34 @@ class RTechComputerCenterPOS:
         pay_frame.pack(fill="x", padx=10, pady=5)
         pay_frame.columnconfigure(1, weight=1)
 
-        tk.Label(pay_frame, text="Subtotal:", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=0, column=0, sticky="w")
-        self.lbl_subtotal = tk.Label(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b")
+        tk.Frame(pay_frame, text="Subtotal:", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=0, column=0, sticky="w")
+        self.lbl_subtotal = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b")
         self.lbl_subtotal.grid(row=0, column=1, sticky="e")
 
-        tk.Label(pay_frame, text="Services Tax (4%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=1, column=0, sticky="w")
-        self.lbl_tax_services = tk.Label(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
+        tk.Frame(pay_frame, text="Services Tax (4%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=1, column=0, sticky="w")
+        self.lbl_tax_services = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
         self.lbl_tax_services.grid(row=1, column=1, sticky="e")
 
-        tk.Label(pay_frame, text="Inventory Tax (5%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=2, column=0, sticky="w")
-        self.lbl_tax_inventory = tk.Label(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
+        tk.Frame(pay_frame, text="Inventory Tax (5%):", font=("Segoe UI", 9), bg="#f8fafc", fg="#475569").grid(row=2, column=0, sticky="w")
+        self.lbl_tax_inventory = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#64748b")
         self.lbl_tax_inventory.grid(row=2, column=1, sticky="e")
 
         ttk.Separator(pay_frame, orient="horizontal").grid(row=3, column=0, columnspan=2, sticky="ew", pady=4)
 
-        tk.Label(pay_frame, text="TOTAL DUE:", font=("Segoe UI", 11, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=4, column=0, sticky="w")
-        self.lbl_total = tk.Label(pay_frame, text="₱ 0.00", font=("Segoe UI", 15, "bold"), fg="#16a34a", bg="#f8fafc")
+        tk.Frame(pay_frame, text="TOTAL DUE:", font=("Segoe UI", 11, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=4, column=0, sticky="w")
+        self.lbl_total = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 15, "bold"), fg="#16a34a", bg="#f8fafc")
         self.lbl_total.grid(row=4, column=1, sticky="e")
 
-        tk.Label(pay_frame, text="Cash Tendered (₱):", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=5, column=0, sticky="w", pady=(5,0))
-        self.entry_cash = tk.Entry(pay_frame, font=("Segoe UI", 11, "bold"), width=12, justify="right", bd=1, relief="solid")
+        tk.Frame(pay_frame, text="Cash Tendered (₱):", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=5, column=0, sticky="w", pady=(5,0))
+        self.entry_cash = st.text_input(pay_frame, font=("Segoe UI", 11, "bold"), width=12, justify="right", bd=1, relief="solid")
         self.entry_cash.grid(row=5, column=1, sticky="e", pady=(5,0))
         self.entry_cash.bind("<KeyRelease>", self.calculate_change)
 
-        tk.Label(pay_frame, text="CHANGE:", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=6, column=0, sticky="w", pady=(5,0))
-        self.lbl_change = tk.Label(pay_frame, text="₱ 0.00", font=("Segoe UI", 13, "bold"), fg="#0284c7", bg="#f8fafc")
+        tk.Frame(pay_frame, text="CHANGE:", font=("Segoe UI", 9, "bold"), bg="#f8fafc", fg="#1e293b").grid(row=6, column=0, sticky="w", pady=(5,0))
+        self.lbl_change = tk.Frame(pay_frame, text="₱ 0.00", font=("Segoe UI", 13, "bold"), fg="#0284c7", bg="#f8fafc")
         self.lbl_change.grid(row=6, column=1, sticky="e", pady=(5,0))
 
-        checkout_btn = tk.Button(self.right_panel, text="✔ COMPLETE SALE / PRINT RECEIPT", font=("Segoe UI", 11, "bold"), 
+        checkout_btn = st.button(self.right_panel, text="✔ COMPLETE SALE / PRINT RECEIPT", font=("Segoe UI", 11, "bold"), 
                                  bg="#22c55e", fg="white", relief="flat", cursor="hand2", pady=8,
                                  command=self.process_checkout)
         checkout_btn.pack(fill="x", padx=10, pady=(5, 10))
@@ -905,29 +905,29 @@ class RTechComputerCenterPOS:
         header_frame = tk.Frame(sales_container, bg="white")
         header_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Label(header_frame, text="📊 Listahan ng Araw-araw na Benta (Daily Sales)", font=("Segoe UI", 11, "bold"), bg="white", fg="#0284c7").pack(side="left")
+        tk.Frame(header_frame, text="📊 Listahan ng Araw-araw na Benta (Daily Sales)", font=("Segoe UI", 11, "bold"), bg="white", fg="#0284c7").pack(side="left")
 
         action_frame = tk.Frame(sales_container, bg="white")
         action_frame.pack(fill="x", pady=(0, 10))
 
-        tk.Label(action_frame, text="Petsa (YYYY-MM-DD):", font=("Segoe UI", 9, "bold"), bg="white", fg="#334155").pack(side="left", padx=(0, 5))
+        tk.Frame(action_frame, text="Petsa (YYYY-MM-DD):", font=("Segoe UI", 9, "bold"), bg="white", fg="#334155").pack(side="left", padx=(0, 5))
         
-        self.entry_sales_date = tk.Entry(action_frame, font=("Segoe UI", 9), width=12, bd=1, relief="solid")
+        self.entry_sales_date = st.text_input(action_frame, font=("Segoe UI", 9), width=12, bd=1, relief="solid")
         self.entry_sales_date.pack(side="left", padx=(0, 5))
         self.entry_sales_date.insert(0, datetime.now().strftime("%Y-%m-%d"))
 
-        btn_filter = tk.Button(action_frame, text="🔍 Salain (Filter)", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", padx=10, command=self.filter_sales_by_date)
+        btn_filter = st.button(action_frame, text="🔍 Salain (Filter)", font=("Segoe UI", 9, "bold"), bg="#0284c7", fg="white", relief="flat", cursor="hand2", padx=10, command=self.filter_sales_by_date)
         btn_filter.pack(side="left", padx=(0, 5))
 
-        btn_all = tk.Button(action_frame, text="Lahat (Show All)", font=("Segoe UI", 9, "bold"), bg="#64748b", fg="white", relief="flat", cursor="hand2", padx=10, command=self.load_sales_data)
+        btn_all = st.button(action_frame, text="Lahat (Show All)", font=("Segoe UI", 9, "bold"), bg="#64748b", fg="white", relief="flat", cursor="hand2", padx=10, command=self.load_sales_data)
         btn_all.pack(side="left", padx=(0, 15))
 
-        export_btn = tk.Button(action_frame, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), 
+        export_btn = st.button(action_frame, text="📥 I-export sa CSV", font=("Segoe UI", 9, "bold"), 
                                bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=10,
                                command=self.export_sales_to_excel)
         export_btn.pack(side="right")
 
-        delete_sale_btn = tk.Button(action_frame, text="🗑️ Tanggalin ang Sale", font=("Segoe UI", 9, "bold"), 
+        delete_sale_btn = st.button(action_frame, text="🗑️ Tanggalin ang Sale", font=("Segoe UI", 9, "bold"), 
                                     bg="#ef4444", fg="white", relief="flat", cursor="hand2", padx=10,
                                     command=self.delete_selected_sale)
         delete_sale_btn.pack(side="right", padx=(0, 10))
@@ -1166,19 +1166,19 @@ class RTechComputerCenterPOS:
         disc_win.grab_set()
         disc_win.configure(bg="#f1f5f9")
 
-        tk.Label(disc_win, text=f"🏷️ I-apply ang Discount", font=("Segoe UI", 11, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
+        tk.Frame(disc_win, text=f"🏷️ I-apply ang Discount", font=("Segoe UI", 11, "bold"), bg="#f1f5f9", fg="#0284c7").pack(pady=10)
 
         form_frm = tk.Frame(disc_win, bg="white", padx=12, pady=12, bd=1, relief="solid")
         form_frm.pack(fill="both", expand=True, padx=15, pady=5)
 
-        tk.Label(form_frm, text="Uri ng Discount:", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        tk.Frame(form_frm, text="Uri ng Discount:", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
         
         dtype_var = tk.StringVar(value=item['discount_type'])
         combo_dtype = ttk.Combobox(form_frm, textvariable=dtype_var, values=["none", "percentage", "fixed"], state="readonly", font=("Segoe UI", 9))
         combo_dtype.pack(fill="x", pady=(2, 8))
 
-        tk.Label(form_frm, text="Halaga ng Discount (% o ₱):", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
-        e_val = tk.Entry(form_frm, font=("Segoe UI", 10))
+        tk.Frame(form_frm, text="Halaga ng Discount (% o ₱):", font=("Segoe UI", 9, "bold"), bg="white").pack(anchor="w")
+        e_val = st.text_input(form_frm, font=("Segoe UI", 10))
         e_val.pack(fill="x", pady=(2, 12))
         e_val.insert(0, str(item['discount_value']))
 
@@ -1202,7 +1202,7 @@ class RTechComputerCenterPOS:
             self.update_cart_display()
             disc_win.destroy()
 
-        btn_apply = tk.Button(form_frm, text="✔ I-apply ang Discount", font=("Segoe UI", 9, "bold"), bg="#22c55e", fg="white", relief="flat", cursor="hand2", command=apply_discount)
+        btn_apply = st.button(form_frm, text="✔ I-apply ang Discount", font=("Segoe UI", 9, "bold"), bg="#22c55e", fg="white", relief="flat", cursor="hand2", command=apply_discount)
         btn_apply.pack(fill="x")
 
     def update_cart_display(self):
@@ -1390,7 +1390,7 @@ class RTechComputerCenterPOS:
                 except Exception as e:
                     messagebox.showerror("Error", f"Hindi ma-save ang resibo: {e}", parent=receipt_win)
 
-        btn_print = tk.Button(btn_frame, text="🖨️ I-print Muli", font=("Segoe UI", 10, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=15, pady=5, command=save_and_close)
+        btn_print = st.button(btn_frame, text="🖨️ I-print Muli", font=("Segoe UI", 10, "bold"), bg="#16a34a", fg="white", relief="flat", cursor="hand2", padx=15, pady=5, command=save_and_close)
         btn_print.pack()
 
     def process_checkout(self):
