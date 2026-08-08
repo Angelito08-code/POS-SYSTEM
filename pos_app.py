@@ -344,8 +344,21 @@ with left_col:
         if submitted_scan and scanned_code:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode=? OR name LIKE ?", (scanned_code, f"%{scanned_code}%"))
+            
+            # 1. Unahin ang saktong Barcode match
+            cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode=?", (scanned_code,))
             db_item = cursor.fetchone()
+            
+            # 2. Kung walang barcode, hanapin ang saktong Pangalan (Case Insensitive)
+            if not db_item:
+                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name COLLATE NOCASE = ?", (scanned_code,))
+                db_item = cursor.fetchone()
+                
+            # 3. Panghuli, partial match kung sakaling hinanap lang
+            if not db_item:
+                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name LIKE ?", (f"%{scanned_code}%",))
+                db_item = cursor.fetchone()
+                
             conn.close()
 
             if db_item:
@@ -374,64 +387,80 @@ with left_col:
 
     tab_serv, tab_inv, tab_sales = st.tabs(["🖨️ Services", "📦 Inventory", "📊 Daily Sales"])
 
-    conn = get_db_connection()
-
     with tab_serv:
         st.subheader("Available Services")
+        conn = get_db_connection()
         df_services = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
-        st.dataframe(df_services, use_container_width=True, hide_index=True)
-        
-        selected_serv_id = st.selectbox("Select Service to Add", options=[0] + list(df_services["id"]), key="sel_serv")
-        if st.button("Add Selected Service to Order"):
-            if selected_serv_id != 0:
-                row = df_services[df_services["id"] == selected_serv_id].iloc[0]
-                found = False
-                for c_item in st.session_state.cart:
-                    if c_item['id'] == row['id']:
-                        c_item['qty'] += 1
-                        found = True
-                        break
-                if not found:
-                    st.session_state.cart.append({
-                        'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': 'Services',
-                        'discount_type': 'none', 'discount_value': 0.0
-                    })
-                st.rerun()
+        conn.close()
+
+        if df_services.empty:
+            st.info("No services available.")
+        else:
+            for _, row in df_services.iterrows():
+                c1, c2, c3 = st.columns([3, 1, 1])
+                with c1:
+                    st.write(f"**{row['name']}**")
+                with c2:
+                    st.write(f"₱{row['price']:,.2f}")
+                with c3:
+                    if st.button("➕ Add", key=f"srv_btn_{row['id']}"):
+                        found = False
+                        for c_item in st.session_state.cart:
+                            if c_item['id'] == row['id']:
+                                c_item['qty'] += 1
+                                found = True
+                                break
+                        if not found:
+                            st.session_state.cart.append({
+                                'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': 'Services',
+                                'discount_type': 'none', 'discount_value': 0.0
+                            })
+                        st.rerun()
 
     with tab_inv:
         st.subheader("Available Inventory")
+        conn = get_db_connection()
         df_inventory = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
-        st.dataframe(df_inventory, use_container_width=True, hide_index=True)
-        
-        selected_inv_id = st.selectbox("Select Inventory Item to Add", options=[0] + list(df_inventory["id"]), key="sel_inv")
-        if st.button("Add Selected Item to Order"):
-            if selected_inv_id != 0:
-                row = df_inventory[df_inventory["id"] == selected_inv_id].iloc[0]
-                if row['stock'] == 0:
-                    st.error("Item is out of stock!")
-                else:
-                    found = False
-                    for c_item in st.session_state.cart:
-                        if c_item['id'] == row['id']:
-                            if row['stock'] != -1 and c_item['qty'] >= row['stock']:
-                                st.warning("Stock limit reached.")
-                            else:
-                                c_item['qty'] += 1
-                            found = True
-                            break
-                    if not found:
-                        st.session_state.cart.append({
-                            'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': 'Inventory',
-                            'discount_type': 'none', 'discount_value': 0.0
-                        })
-                    st.rerun()
+        conn.close()
+
+        if df_inventory.empty:
+            st.info("No inventory items available.")
+        else:
+            for _, row in df_inventory.iterrows():
+                c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+                with c1:
+                    st.write(f"**{row['name']}**")
+                with c2:
+                    st.write(f"Stock: {row['stock'] if row['stock'] != -1 else 'Unli'}")
+                with c3:
+                    st.write(f"₱{row['price']:,.2f}")
+                with c4:
+                    if st.button("➕ Add", key=f"inv_btn_{row['id']}"):
+                        if row['stock'] == 0:
+                            st.error("Out of stock!")
+                        else:
+                            found = False
+                            for c_item in st.session_state.cart:
+                                if c_item['id'] == row['id']:
+                                    if row['stock'] != -1 and c_item['qty'] >= row['stock']:
+                                        st.warning("Stock limit reached.")
+                                    else:
+                                        c_item['qty'] += 1
+                                    found = True
+                                    break
+                            if not found:
+                                st.session_state.cart.append({
+                                    'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': 'Inventory',
+                                    'discount_type': 'none', 'discount_value': 0.0
+                                })
+                            st.rerun()
 
     with tab_sales:
         st.subheader("Daily Sales History")
+        conn = get_db_connection()
         df_sales = pd.read_sql("SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales ORDER BY id DESC", conn)
+        conn.close()
         st.dataframe(df_sales, use_container_width=True, hide_index=True)
-
-    conn.close()
 
 with right_col:
     st.markdown("### 🛒 Current Order")
