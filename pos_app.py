@@ -4,13 +4,6 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
-header_col1, header_col2, header_col3 = st.columns([1, 3, 2])
-with header_col1:
-    st.image("https://github.com/Angelito08-code/POS-SYSTEM/blob/main/RTECH%20Logo.png", width=100)
-with header_col2:
-    st.markdown(f"## 💻 {settings['store_name']}")
-    st.caption(f"TIN: {settings['tin_number']}")
-
 # ---------------------------------------------------------
 # PAGE CONFIGURATION
 # ---------------------------------------------------------
@@ -21,7 +14,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# DATABASE & SETTINGS MANAGEMENT
+# DATABASE & SETTINGS FUNCTIONS (Dapat una itong ideclare)
 # ---------------------------------------------------------
 def get_db_connection():
     conn = sqlite3.connect("pos_rtech_computer.db")
@@ -119,7 +112,11 @@ def save_setting_db(key, value):
     conn.commit()
     conn.close()
 
+# ---------------------------------------------------------
+# RUN INITIALIZATIONS & LOAD SETTINGS (Dapat bago ang UI)
+# ---------------------------------------------------------
 init_db()
+settings = load_settings()
 
 # ---------------------------------------------------------
 # SESSION STATE INITIALIZATION
@@ -128,8 +125,6 @@ if "cart" not in st.session_state:
     st.session_state.cart = []
 if "barcode_input" not in st.session_state:
     st.session_state.barcode_input = ""
-
-settings = load_settings()
 
 # ---------------------------------------------------------
 # DIALOGS (MODALS)
@@ -153,13 +148,12 @@ def tax_settings_dialog():
 @st.dialog("🖨️ Manage Services", width="large")
 def services_manager_dialog():
     st.subheader("Add New Service")
-    conn = get_db_connection()
-    
     with st.form("service_form"):
         s_name = st.text_input("Service Name")
         s_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
         submitted = st.form_submit_button("Add New Service")
         if submitted and s_name:
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Services', ?, -1, NULL)", (s_name, s_price))
             conn.commit()
@@ -176,7 +170,6 @@ def services_manager_dialog():
     if not df_serv.empty:
         st.dataframe(df_serv, use_container_width=True, hide_index=True)
         
-        # Edit Service Section
         edit_id = st.selectbox("Select Service ID to Edit", options=[0] + list(df_serv["id"]), key="edit_serv_select")
         if edit_id != 0:
             selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
@@ -194,7 +187,6 @@ def services_manager_dialog():
                     st.rerun()
 
         st.divider()
-        # Delete Service Section
         del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
         if del_id != 0 and st.button("🗑️ Delete Selected Service"):
             conn = get_db_connection()
@@ -208,8 +200,6 @@ def services_manager_dialog():
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
     st.subheader("Add New Inventory Item")
-    conn = get_db_connection()
-    
     with st.form("inventory_form"):
         i_name = st.text_input("Item Name")
         i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
@@ -217,6 +207,7 @@ def inventory_manager_dialog():
         i_barcode = st.text_input("Barcode (Optional)")
         submitted = st.form_submit_button("Add Inventory Item")
         if submitted and i_name:
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Inventory', ?, ?, ?)", 
                            (i_name, i_price, i_stock, i_barcode if i_barcode else None))
@@ -234,7 +225,6 @@ def inventory_manager_dialog():
     if not df_inv.empty:
         st.dataframe(df_inv, use_container_width=True, hide_index=True)
         
-        # Edit Inventory Section
         edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + list(df_inv["id"]), key="edit_inv_select")
         if edit_inv_id != 0:
             selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
@@ -256,7 +246,6 @@ def inventory_manager_dialog():
                     st.rerun()
 
         st.divider()
-        # Delete Inventory Section
         del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
         if del_inv_id != 0 and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
             conn = get_db_connection()
@@ -361,7 +350,7 @@ def receipt_preview_dialog(receipt_text):
     )
 
 # ---------------------------------------------------------
-# MAIN HEADER BAR
+# MAIN HEADER BAR (Safe na rito tawagin ang settings dahil defined na)
 # ---------------------------------------------------------
 header_col1, header_col2 = st.columns([3, 2])
 with header_col1:
