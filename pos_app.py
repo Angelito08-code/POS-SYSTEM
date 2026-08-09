@@ -1,5 +1,4 @@
 import streamlit as st
-import psycopg2
 import streamlit.components.v1 as components
 import sqlite3
 import pandas as pd
@@ -17,19 +16,8 @@ st.set_page_config(
 # ---------------------------------------------------------
 # DATABASE & SETTINGS FUNCTIONS
 # ---------------------------------------------------------
-import psycopg2
-import streamlit as st
-
 def get_db_connection():
-    # Kukunin nito ang credentials mula sa Streamlit Secrets
-    db_config = st.secrets["supabase"]
-    conn = psycopg2.connect(
-        host=db_config["host"],
-        database=db_config["database"],
-        user=db_config["user"],
-        password=db_config["password"],
-        port=db_config["port"]
-    )
+    conn = sqlite3.connect("pos_rtech_computer.db")
     return conn
 
 def init_db():
@@ -512,7 +500,6 @@ with left_col:
     with tab_sales:
         st.subheader("Daily Sales History & Management")
         
-        # 1. FILTER DATE CONTROLS
         f_col1, f_col2 = st.columns([1, 2])
         with f_col1:
             enable_date_filter = st.checkbox("Filter by Date")
@@ -558,7 +545,6 @@ with left_col:
                     st.write(f"**Items inside Sale #{selected_sale_id}:**")
                     st.dataframe(df_details, use_container_width=True, hide_index=True)
                     
-                    # 2. EDIT SALE FORM
                     with st.form(f"edit_sale_form_{selected_sale_id}"):
                         st.write(f"Editing Details for Sale ID: **#{selected_sale_id}**")
                         e_datetime = st.text_input("Date & Time (YYYY-MM-DD HH:MM:SS)", value=curr_date_time)
@@ -582,13 +568,10 @@ with left_col:
                             st.success(f"Sale #{selected_sale_id} updated successfully!")
                             st.rerun()
 
-                    # 3. DELETE SALE BUTTON
                     if st.button(f"🗑️ Delete Sale #{selected_sale_id}", type="secondary", key=f"del_sale_btn_{selected_sale_id}"):
                         conn = get_db_connection()
                         cursor = conn.cursor()
-                        # Clear details first to avoid foreign key issues
                         cursor.execute("DELETE FROM sales_details WHERE sale_id=?", (selected_sale_id,))
-                        # Clear main sale record
                         cursor.execute("DELETE FROM sales WHERE id=?", (selected_sale_id,))
                         conn.commit()
                         conn.close()
@@ -681,14 +664,12 @@ with right_col:
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                # Sa loob ng iyong checkout/complete sale code:
-cursor.execute('''
-    INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
-    RETURNING id
-''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
-
-sale_id = cursor.fetchone()[0]
+                cursor.execute('''
+                    INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
+                
+                sale_id = cursor.lastrowid
 
                 for item in st.session_state.cart:
                     cursor.execute('''
