@@ -103,6 +103,10 @@ def init_db():
         conn.commit()
     conn.close()
 
+# ---------------------------------------------------------
+# CACHED DATA FUNCTIONS (Para Bumilis ang Pag-load)
+# ---------------------------------------------------------
+@st.cache_data
 def load_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -121,6 +125,20 @@ def load_settings():
         "tax_rate_inventory": float(rows.get("tax_rate_inventory", 5.0))
     }
 
+@st.cache_data
+def load_services():
+    conn = get_db_connection()
+    df = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
+    conn.close()
+    return df
+
+@st.cache_data
+def load_inventory():
+    conn = get_db_connection()
+    df = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
+    conn.close()
+    return df
+
 def save_setting_db(key, value):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -130,6 +148,7 @@ def save_setting_db(key, value):
     """, (key, str(value)))
     conn.commit()
     conn.close()
+    st.cache_data.clear() # Clear cache para mag-update agad
 
 # ---------------------------------------------------------
 # RUN INITIALIZATIONS & LOAD SETTINGS
@@ -177,13 +196,12 @@ def services_manager_dialog():
             cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, 'Services', %s, -1, NULL)", (s_name, s_price))
             conn.commit()
             conn.close()
+            st.cache_data.clear()
             st.success("Service added to Supabase!")
 
     st.divider()
     st.subheader("Edit / Delete Services")
-    conn = get_db_connection()
-    df_serv = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
-    conn.close()
+    df_serv = load_services()
     
     if not df_serv.empty:
         st.dataframe(df_serv, use_container_width=True, hide_index=True)
@@ -201,6 +219,7 @@ def services_manager_dialog():
                     cursor.execute("UPDATE items SET name=%s, price=%s WHERE id=%s", (e_name, e_price, edit_id))
                     conn.commit()
                     conn.close()
+                    st.cache_data.clear()
                     st.success("Service updated successfully!")
 
         st.divider()
@@ -211,6 +230,7 @@ def services_manager_dialog():
             cursor.execute("DELETE FROM items WHERE id=%s", (del_id,))
             conn.commit()
             conn.close()
+            st.cache_data.clear()
             st.success("Service deleted.")
 
 @st.dialog("📦 Manage Inventory", width="large")
@@ -229,13 +249,12 @@ def inventory_manager_dialog():
                            (i_name, i_price, i_stock, i_barcode if i_barcode else None))
             conn.commit()
             conn.close()
+            st.cache_data.clear()
             st.success("Inventory item added to Supabase!")
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
-    conn = get_db_connection()
-    df_inv = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
-    conn.close()
+    df_inv = load_inventory()
     
     if not df_inv.empty:
         st.dataframe(df_inv, use_container_width=True, hide_index=True)
@@ -257,6 +276,7 @@ def inventory_manager_dialog():
                                    (ei_name, ei_price, ei_stock, ei_barcode if ei_barcode else None, edit_inv_id))
                     conn.commit()
                     conn.close()
+                    st.cache_data.clear()
                     st.success("Inventory item updated successfully!")
 
         st.divider()
@@ -267,6 +287,7 @@ def inventory_manager_dialog():
             cursor.execute("DELETE FROM items WHERE id=%s", (del_inv_id,))
             conn.commit()
             conn.close()
+            st.cache_data.clear()
             st.success("Item deleted.")
 
 @st.dialog("🏷️ Edit Item Discount")
@@ -450,9 +471,7 @@ with left_col:
 
     with tab_serv:
         st.subheader("Available Services")
-        conn = get_db_connection()
-        df_services = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
-        conn.close()
+        df_services = load_services()
 
         if df_services.empty:
             st.info("No services available.")
@@ -480,9 +499,7 @@ with left_col:
 
     with tab_inv:
         st.subheader("Available Inventory")
-        conn = get_db_connection()
-        df_inventory = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
-        conn.close()
+        df_inventory = load_inventory()
 
         if df_inventory.empty:
             st.info("No inventory items available.")
@@ -584,6 +601,7 @@ with left_col:
                             ''', (e_datetime, e_total, e_cash, e_change, selected_sale_id))
                             conn.commit()
                             conn.close()
+                            st.cache_data.clear()
                             st.success(f"Sale #{selected_sale_id} updated successfully!")
                             st.rerun()
 
@@ -594,6 +612,7 @@ with left_col:
                         cursor.execute("DELETE FROM sales WHERE id=%s", (selected_sale_id,))
                         conn.commit()
                         conn.close()
+                        st.cache_data.clear()
                         st.success(f"Sale #{selected_sale_id} has been deleted.")
                         st.rerun()
 
@@ -704,6 +723,7 @@ with right_col:
 
                 conn.commit()
                 conn.close()
+                st.cache_data.clear() # Clear cache pagkatapos mag-checkout para mag-update ang stocks
 
                 receipt_text = "=" * 42 + "\n"
                 receipt_text += f"{settings['store_name']:^42}\n"
