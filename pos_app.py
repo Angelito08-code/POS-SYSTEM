@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import psycopg2
 import pandas as pd
+import os
 from datetime import datetime
 
 # ---------------------------------------------------------
@@ -17,13 +18,28 @@ st.set_page_config(
 # DATABASE & SETTINGS FUNCTIONS (SUPABASE / POSTGRESQL)
 # ---------------------------------------------------------
 def get_db_connection():
-    db_config = st.secrets["supabase"]
+    try:
+        # Subukang basahin mula sa Streamlit Secrets
+        db_config = st.secrets["supabase"]
+        host = db_config["host"]
+        database = db_config["database"]
+        user = db_config["user"]
+        password = db_config["password"]
+        port = db_config["port"]
+    except Exception:
+        # Fallback sa Render Environment Variables kung walang secrets.toml
+        host = os.environ.get("SUPABASE_HOST")
+        database = os.environ.get("SUPABASE_DATABASE")
+        user = os.environ.get("SUPABASE_USER")
+        password = os.environ.get("SUPABASE_PASSWORD")
+        port = os.environ.get("SUPABASE_PORT", "5432")
+
     conn = psycopg2.connect(
-        host=db_config["host"],
-        database=db_config["database"],
-        user=db_config["user"],
-        password=db_config["password"],
-        port=db_config["port"]
+        host=host,
+        database=database,
+        user=user,
+        password=password,
+        port=port
     )
     return conn
 
