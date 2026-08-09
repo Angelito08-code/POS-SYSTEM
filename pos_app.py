@@ -26,15 +26,20 @@ def get_db_connection():
         pass
 
     if not database_url:
-        database_url = os.environ.get("DATABASE_URL") or "postgresql://postgres:IzoMeELhcSr4Uhq5@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres"
+        database_url = os.environ.get("DATABASE_URL") or "postgresql://postgres.ylwczrmidyndkvhgnblg:IzoMeELhcSr4Uhq5@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
     if not database_url:
         st.error("🚨 **Database Configuration Error:** Kulang o walang laman ang iyong `DATABASE_URL` sa Render Environment Variables!")
         st.info("Pumunta sa iyong **Render Dashboard > Environment**, gumawa ng variable na may pangalang **`DATABASE_URL`**, at ilagay ang buong URI connection string mula sa iyong Supabase database.")
         st.stop()
 
-    conn = psycopg2.connect(database_url)
-    return conn
+    try:
+        conn = psycopg2.connect(database_url)
+        return conn
+    except Exception as e:
+        st.error(f"🚨 **Database Connection Failed:** {e}")
+        st.info("Tip: Siguraduhing ginagamit mo ang Supabase **Connection Pooler URL (Port 6543)** upang maiwasan ang IPv6 network issues sa Render.")
+        st.stop()
 
 def init_db():
     conn = get_db_connection()
@@ -104,7 +109,7 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS (Para Bumilis ang Pag-load)
+# CACHED DATA FUNCTIONS
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -148,7 +153,7 @@ def save_setting_db(key, value):
     """, (key, str(value)))
     conn.commit()
     conn.close()
-    st.cache_data.clear() # Clear cache para mag-update agad
+    st.cache_data.clear()
 
 # ---------------------------------------------------------
 # RUN INITIALIZATIONS & LOAD SETTINGS
@@ -723,7 +728,7 @@ with right_col:
 
                 conn.commit()
                 conn.close()
-                st.cache_data.clear() # Clear cache pagkatapos mag-checkout para mag-update ang stocks
+                st.cache_data.clear()
 
                 receipt_text = "=" * 42 + "\n"
                 receipt_text += f"{settings['store_name']:^42}\n"
