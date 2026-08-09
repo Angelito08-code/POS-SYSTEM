@@ -150,7 +150,7 @@ def services_manager_dialog():
     st.subheader("Add New Service")
     with st.form("service_form", clear_on_submit=True):
         s_name = st.text_input("Service Name")
-        s_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
+        s_price = st.number_input("Price (₱)", min_value=0.0, step=1.0, value=0.0)
         submitted = st.form_submit_button("Add New Service")
         if submitted and s_name:
             conn = get_db_connection()
@@ -199,8 +199,8 @@ def inventory_manager_dialog():
     st.subheader("Add New Inventory Item")
     with st.form("inventory_form", clear_on_submit=True):
         i_name = st.text_input("Item Name")
-        i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0)
-        i_stock = st.number_input("Stock Quantity", min_value=0, step=1, value=10)
+        i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0, value=0.0)
+        i_stock = st.number_input("Stock Quantity", min_value=0, step=1, value=0)
         i_barcode = st.text_input("Barcode (Optional)")
         submitted = st.form_submit_button("Add Inventory Item")
         if submitted and i_name:
