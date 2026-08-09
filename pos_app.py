@@ -498,11 +498,90 @@ with left_col:
                             st.rerun()
 
     with tab_sales:
-        st.subheader("Daily Sales History")
+        st.subheader("Daily Sales History & Management")
+        
+        # 1. FILTER DATE CONTROLS
+        f_col1, f_col2 = st.columns([1, 2])
+        with f_col1:
+            enable_date_filter = st.checkbox("Filter by Date")
+        
+        selected_filter_date = None
+        if enable_date_filter:
+            with f_col2:
+                selected_filter_date = st.date_input("Select Sales Date", value=datetime.today())
+
         conn = get_db_connection()
-        df_sales = pd.read_sql("SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales ORDER BY id DESC", conn)
+        if enable_date_filter and selected_filter_date:
+            date_str = selected_filter_date.strftime("%Y-%m-%d")
+            query = "SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales WHERE DATE(date_time) = ? ORDER BY id DESC"
+            df_sales = pd.read_sql(query, conn, params=(date_str,))
+        else:
+            query = "SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales ORDER BY id DESC"
+            df_sales = pd.read_sql(query, conn)
         conn.close()
-        st.dataframe(df_sales, use_container_width=True, hide_index=True)
+
+        if df_sales.empty:
+            st.info("No sales records found.")
+        else:
+            st.dataframe(df_sales, use_container_width=True, hide_index=True)
+            
+            st.divider()
+            st.subheader("Edit or Delete Sale Record")
+            
+            sale_ids = list(df_sales["id"])
+            selected_sale_id = st.selectbox("Select Sale ID to Manage", options=[0] + sale_ids, key="manage_sale_select")
+            
+            if selected_sale_id != 0:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT date_time, subtotal, total, cash, change_amount FROM sales WHERE id=?", (selected_sale_id,))
+                sale_data = cursor.fetchone()
+                
+                df_details = pd.read_sql("SELECT item_name, price, quantity, subtotal FROM sales_details WHERE sale_id=?", conn, params=(selected_sale_id,))
+                conn.close()
+                
+                if sale_data:
+                    curr_date_time, curr_subtotal, curr_total, curr_cash, curr_change = sale_data
+                    
+                    st.write(f"**Items inside Sale #{selected_sale_id}:**")
+                    st.dataframe(df_details, use_container_width=True, hide_index=True)
+                    
+                    # 2. EDIT SALE FORM
+                    with st.form(f"edit_sale_form_{selected_sale_id}"):
+                        st.write(f"Editing Details for Sale ID: **#{selected_sale_id}**")
+                        e_datetime = st.text_input("Date & Time (YYYY-MM-DD HH:MM:SS)", value=curr_date_time)
+                        e_total = st.number_input("Total Amount (₱)", value=float(curr_total), min_value=0.0, step=1.0)
+                        e_cash = st.number_input("Cash Tendered (₱)", value=float(curr_cash), min_value=0.0, step=1.0)
+                        
+                        e_change = e_cash - e_total
+                        st.info(f"Updated Change Calculation: ₱{e_change:,.2f}")
+                        
+                        update_sale_btn = st.form_submit_button("💾 Save Changes")
+                        if update_sale_btn:
+                            conn = get_db_connection()
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                UPDATE sales 
+                                SET date_time=?, total=?, cash=?, change_amount=? 
+                                WHERE id=?
+                            ''', (e_datetime, e_total, e_cash, e_change, selected_sale_id))
+                            conn.commit()
+                            conn.close()
+                            st.success(f"Sale #{selected_sale_id} updated successfully!")
+                            st.rerun()
+
+                    # 3. DELETE SALE BUTTON
+                    if st.button(f"🗑️ Delete Sale #{selected_sale_id}", type="secondary", key=f"del_sale_btn_{selected_sale_id}"):
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+                        # Clear details first to avoid foreign key issues
+                        cursor.execute("DELETE FROM sales_details WHERE sale_id=?", (selected_sale_id,))
+                        # Clear main sale record
+                        cursor.execute("DELETE FROM sales WHERE id=?", (selected_sale_id,))
+                        conn.commit()
+                        conn.close()
+                        st.success(f"Sale #{selected_sale_id} has been deleted.")
+                        st.rerun()
 
 with right_col:
     st.markdown("### 🛒 Current Order")
