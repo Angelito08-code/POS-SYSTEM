@@ -15,53 +15,25 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# DATABASE & SETTINGS FUNCTIONS (SUPABASE / POSTGRESQL)
+# DATABASE CONNECTION (SUPABASE / POSTGRESQL URI)
 # ---------------------------------------------------------
 def get_db_connection():
-    host = None
-    database = None
-    user = None
-    password = None
-    port = 5432
-
+    database_url = None
     try:
-        if "supabase" in st.secrets:
-            db_config = st.secrets["supabase"]
-            host = db_config.get("host")
-            database = db_config.get("database")
-            user = db_config.get("user")
-            password = db_config.get("password")
-            p = db_config.get("port", 5432)
-            try:
-                port = int(p)
-            except (ValueError, TypeError):
-                port = 5432
+        if "supabase" in st.secrets and "url" in st.secrets["supabase"]:
+            database_url = st.secrets["supabase"]["url"]
     except Exception:
         pass
 
-    if not host:
-        host = os.environ.get("SUPABASE_HOST")
-        database = os.environ.get("SUPABASE_DATABASE")
-        user = os.environ.get("SUPABASE_USER")
-        password = os.environ.get("SUPABASE_PASSWORD")
-        p = os.environ.get("SUPABASE_PORT", "5432")
-        try:
-            port = int(p)
-        except (ValueError, TypeError):
-            port = 5432
+    if not database_url:
+        database_url = os.environ.get("postgresql://postgres:U6a4wWvcr21eO0RY@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres") or os.environ.get("postgresql://postgres:U6a4wWvcr21eO0RY@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres")
 
-    if not host or not database or not user or not password:
-        st.error("🚨 **Database Configuration Error:** Kulang o walang laman ang iyong Supabase Environment Variables sa Render dashboard!")
-        st.info("Pumunta sa iyong **Render Dashboard > Environment** at siguraduhing naidagdag mo ang mga tamang detalye.")
+    if not database_url:
+        st.error("🚨 **Database Configuration Error:** Kulang o walang laman ang iyong `DATABASE_URL` sa Render Environment Variables!")
+        st.info("Pumunta sa iyong **Render Dashboard > Environment**, gumawa ng variable na may pangalang **`DATABASE_URL`**, at ilagay ang buong URI connection string mula sa iyong Supabase database.")
         st.stop()
 
-    conn = psycopg2.connect(
-        host=host,
-        database=database,
-        user=user,
-        password=password,
-        port=port
-    )
+    conn = psycopg2.connect(database_url)
     return conn
 
 def init_db():
