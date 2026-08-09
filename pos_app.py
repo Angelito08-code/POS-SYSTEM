@@ -26,7 +26,7 @@ def get_db_connection():
         pass
 
     if not database_url:
-        database_url = os.environ.get("postgresql://postgres:U6a4wWvcr21eO0RY@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres") or os.environ.get("postgresql://postgres:U6a4wWvcr21eO0RY@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres")
+        database_url = os.environ.get("") or os.environ.get("postgresql://postgres:rtechcomputercenter123456$@db.ylwczrmidyndkvhgnblg.supabase.co:5432/postgres")
 
     if not database_url:
         st.error("🚨 **Database Configuration Error:** Kulang o walang laman ang iyong `DATABASE_URL` sa Render Environment Variables!")
