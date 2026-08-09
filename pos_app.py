@@ -1,4 +1,5 @@
 import streamlit as st
+import psycopg2
 import streamlit.components.v1 as components
 import sqlite3
 import pandas as pd
@@ -16,8 +17,19 @@ st.set_page_config(
 # ---------------------------------------------------------
 # DATABASE & SETTINGS FUNCTIONS
 # ---------------------------------------------------------
+import psycopg2
+import streamlit as st
+
 def get_db_connection():
-    conn = sqlite3.connect("pos_rtech_computer.db")
+    # Kukunin nito ang credentials mula sa Streamlit Secrets
+    db_config = st.secrets["supabase"]
+    conn = psycopg2.connect(
+        host=db_config["host"],
+        database=db_config["database"],
+        user=db_config["user"],
+        password=db_config["password"],
+        port=db_config["port"]
+    )
     return conn
 
 def init_db():
@@ -669,12 +681,14 @@ with right_col:
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
-                
-                sale_id = cursor.lastrowid
+                # Sa loob ng iyong checkout/complete sale code:
+cursor.execute('''
+    INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    RETURNING id
+''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
+
+sale_id = cursor.fetchone()[0]
 
                 for item in st.session_state.cart:
                     cursor.execute('''
