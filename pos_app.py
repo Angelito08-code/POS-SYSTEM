@@ -22,7 +22,7 @@ def get_db_connection():
     database = None
     user = None
     password = None
-    port = "5432"
+    port = 5432
 
     try:
         if "supabase" in st.secrets:
@@ -31,7 +31,11 @@ def get_db_connection():
             database = db_config.get("database")
             user = db_config.get("user")
             password = db_config.get("password")
-            port = str(db_config.get("port", "5432"))
+            p = db_config.get("port", 5432)
+            try:
+                port = int(p)
+            except (ValueError, TypeError):
+                port = 5432
     except Exception:
         pass
 
@@ -40,11 +44,15 @@ def get_db_connection():
         database = os.environ.get("SUPABASE_DATABASE")
         user = os.environ.get("SUPABASE_USER")
         password = os.environ.get("SUPABASE_PASSWORD")
-        port = os.environ.get("SUPABASE_PORT", "5432")
+        p = os.environ.get("SUPABASE_PORT", "5432")
+        try:
+            port = int(p)
+        except (ValueError, TypeError):
+            port = 5432
 
     if not host or not database or not user or not password:
         st.error("🚨 **Database Configuration Error:** Kulang o walang laman ang iyong Supabase Environment Variables sa Render dashboard!")
-        st.info("Pumunta sa iyong **Render Dashboard > Environment** at siguraduhing naidagdag mo ang mga sumusunod:\n- `SUPABASE_HOST`\n- `SUPABASE_DATABASE`\n- `SUPABASE_USER`\n- `SUPABASE_PASSWORD`\n- `SUPABASE_PORT`")
+        st.info("Pumunta sa iyong **Render Dashboard > Environment** at siguraduhing naidagdag mo ang mga tamang detalye.")
         st.stop()
 
     conn = psycopg2.connect(
