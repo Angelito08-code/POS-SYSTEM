@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import sqlite3
+import psycopg2
 import pandas as pd
 from datetime import datetime
 
@@ -14,10 +14,17 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# DATABASE & SETTINGS FUNCTIONS
+# DATABASE & SETTINGS FUNCTIONS (SUPABASE / POSTGRESQL)
 # ---------------------------------------------------------
 def get_db_connection():
-    conn = sqlite3.connect("pos_rtech_computer.db")
+    db_config = st.secrets["supabase"]
+    conn = psycopg2.connect(
+        host=db_config["host"],
+        database=db_config["database"],
+        user=db_config["user"],
+        password=db_config["password"],
+        port=db_config["port"]
+    )
     return conn
 
 def init_db():
@@ -26,7 +33,7 @@ def init_db():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
             price REAL NOT NULL,
@@ -37,7 +44,7 @@ def init_db():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS sales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             date_time TEXT NOT NULL,
             subtotal REAL DEFAULT 0,
             non_vat_sales REAL DEFAULT 0,
@@ -50,13 +57,12 @@ def init_db():
      
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS sales_details (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sale_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            sale_id INTEGER REFERENCES sales(id),
             item_name TEXT,
             price REAL,
             quantity INTEGER,
-            subtotal REAL,
-            FOREIGN KEY (sale_id) REFERENCES sales(id)
+            subtotal REAL
         )
     ''')
 
@@ -84,7 +90,7 @@ def init_db():
             ("16GB USB Flash Drive", "Inventory", 250.00, 8, "480001234572"),
             ("A4 Bond Paper (10s)", "Inventory", 15.00, 100, "480001234573")
         ]
-        cursor.executemany("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, ?, ?, ?, ?)", default_items)
+        cursor.executemany("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, %s, %s, %s, %s)", default_items)
         conn.commit()
     conn.close()
 
@@ -95,6 +101,7 @@ def load_settings():
         cursor.execute("SELECT key, value FROM settings")
         rows = dict(cursor.fetchall())
     except Exception:
+        conn.rollback()
         rows = {}
     conn.close()
     
@@ -108,7 +115,10 @@ def load_settings():
 def save_setting_db(key, value):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, str(value)))
+    cursor.execute("""
+        INSERT INTO settings (key, value) VALUES (%s, %s)
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    """, (key, str(value)))
     conn.commit()
     conn.close()
 
@@ -155,10 +165,10 @@ def services_manager_dialog():
         if submitted and s_name:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Services', ?, -1, NULL)", (s_name, s_price))
+            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, 'Services', %s, -1, NULL)", (s_name, s_price))
             conn.commit()
             conn.close()
-            st.success("Service added!")
+            st.success("Service added to Supabase!")
 
     st.divider()
     st.subheader("Edit / Delete Services")
@@ -167,7 +177,7 @@ def services_manager_dialog():
     conn.close()
     
     if not df_serv.empty:
-        st.dataframe(df_serv, use_container_width=True, hide_index=True)
+        st.dataframe(df_serv, width='stretch', hide_index=True)
         
         edit_id = st.selectbox("Select Service ID to Edit", options=[0] + list(df_serv["id"]), key="edit_serv_select")
         if edit_id != 0:
@@ -179,7 +189,7 @@ def services_manager_dialog():
                 if update_sub:
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE items SET name=?, price=? WHERE id=?", (e_name, e_price, edit_id))
+                    cursor.execute("UPDATE items SET name=%s, price=%s WHERE id=%s", (e_name, e_price, edit_id))
                     conn.commit()
                     conn.close()
                     st.success("Service updated successfully!")
@@ -189,7 +199,7 @@ def services_manager_dialog():
         if del_id != 0 and st.button("🗑️ Delete Selected Service"):
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM items WHERE id=?", (del_id,))
+            cursor.execute("DELETE FROM items WHERE id=%s", (del_id,))
             conn.commit()
             conn.close()
             st.success("Service deleted.")
@@ -206,11 +216,11 @@ def inventory_manager_dialog():
         if submitted and i_name:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (?, 'Inventory', ?, ?, ?)", 
+            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, 'Inventory', %s, %s, %s)", 
                            (i_name, i_price, i_stock, i_barcode if i_barcode else None))
             conn.commit()
             conn.close()
-            st.success("Inventory item added!")
+            st.success("Inventory item added to Supabase!")
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -219,7 +229,7 @@ def inventory_manager_dialog():
     conn.close()
     
     if not df_inv.empty:
-        st.dataframe(df_inv, use_container_width=True, hide_index=True)
+        st.dataframe(df_inv, width='stretch', hide_index=True)
         
         edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + list(df_inv["id"]), key="edit_inv_select")
         if edit_inv_id != 0:
@@ -234,7 +244,7 @@ def inventory_manager_dialog():
                 if update_inv_sub:
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE items SET name=?, price=?, stock=?, barcode=? WHERE id=?", 
+                    cursor.execute("UPDATE items SET name=%s, price=%s, stock=%s, barcode=%s WHERE id=%s", 
                                    (ei_name, ei_price, ei_stock, ei_barcode if ei_barcode else None, edit_inv_id))
                     conn.commit()
                     conn.close()
@@ -245,7 +255,7 @@ def inventory_manager_dialog():
         if del_inv_id != 0 and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM items WHERE id=?", (del_inv_id,))
+            cursor.execute("DELETE FROM items WHERE id=%s", (del_inv_id,))
             conn.commit()
             conn.close()
             st.success("Item deleted.")
@@ -384,21 +394,21 @@ with left_col:
             scanned_code = st.text_input("Barcode Scanner / Search", placeholder="Scan barcode or type item code...", key="scan_input")
         with b_col2:
             st.write("")
-            submitted_scan = st.form_submit_button("Scan / Add", use_container_width=True)
+            submitted_scan = st.form_submit_button("Scan / Add", width='stretch')
 
         if submitted_scan and scanned_code:
             conn = get_db_connection()
             cursor = conn.cursor()
             
-            cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode=?", (scanned_code,))
+            cursor.execute("SELECT id, name, price, stock, category FROM items WHERE barcode = %s", (scanned_code,))
             db_item = cursor.fetchone()
             
             if not db_item:
-                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name COLLATE NOCASE = ?", (scanned_code,))
+                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name ILIKE %s", (scanned_code,))
                 db_item = cursor.fetchone()
                 
             if not db_item:
-                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name LIKE ?", (f"%{scanned_code}%",))
+                cursor.execute("SELECT id, name, price, stock, category FROM items WHERE name ILIKE %s", (f"%{scanned_code}%",))
                 db_item = cursor.fetchone()
                 
             conn.close()
@@ -512,8 +522,8 @@ with left_col:
         conn = get_db_connection()
         if enable_date_filter and selected_filter_date:
             date_str = selected_filter_date.strftime("%Y-%m-%d")
-            query = "SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales WHERE DATE(date_time) = ? ORDER BY id DESC"
-            df_sales = pd.read_sql(query, conn, params=(date_str,))
+            query = "SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales WHERE date_time LIKE %s ORDER BY id DESC"
+            df_sales = pd.read_sql(query, conn, params=(f"{date_str}%",))
         else:
             query = "SELECT id, date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount FROM sales ORDER BY id DESC"
             df_sales = pd.read_sql(query, conn)
@@ -522,7 +532,7 @@ with left_col:
         if df_sales.empty:
             st.info("No sales records found.")
         else:
-            st.dataframe(df_sales, use_container_width=True, hide_index=True)
+            st.dataframe(df_sales, width='stretch', hide_index=True)
             
             st.divider()
             st.subheader("Edit or Delete Sale Record")
@@ -533,17 +543,17 @@ with left_col:
             if selected_sale_id != 0:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT date_time, subtotal, total, cash, change_amount FROM sales WHERE id=?", (selected_sale_id,))
+                cursor.execute("SELECT date_time, subtotal, total, cash, change_amount FROM sales WHERE id=%s", (selected_sale_id,))
                 sale_data = cursor.fetchone()
                 
-                df_details = pd.read_sql("SELECT item_name, price, quantity, subtotal FROM sales_details WHERE sale_id=?", conn, params=(selected_sale_id,))
+                df_details = pd.read_sql("SELECT item_name, price, quantity, subtotal FROM sales_details WHERE sale_id=%s", conn, params=(selected_sale_id,))
                 conn.close()
                 
                 if sale_data:
                     curr_date_time, curr_subtotal, curr_total, curr_cash, curr_change = sale_data
                     
                     st.write(f"**Items inside Sale #{selected_sale_id}:**")
-                    st.dataframe(df_details, use_container_width=True, hide_index=True)
+                    st.dataframe(df_details, width='stretch', hide_index=True)
                     
                     with st.form(f"edit_sale_form_{selected_sale_id}"):
                         st.write(f"Editing Details for Sale ID: **#{selected_sale_id}**")
@@ -560,8 +570,8 @@ with left_col:
                             cursor = conn.cursor()
                             cursor.execute('''
                                 UPDATE sales 
-                                SET date_time=?, total=?, cash=?, change_amount=? 
-                                WHERE id=?
+                                SET date_time=%s, total=%s, cash=%s, change_amount=%s 
+                                WHERE id=%s
                             ''', (e_datetime, e_total, e_cash, e_change, selected_sale_id))
                             conn.commit()
                             conn.close()
@@ -571,8 +581,8 @@ with left_col:
                     if st.button(f"🗑️ Delete Sale #{selected_sale_id}", type="secondary", key=f"del_sale_btn_{selected_sale_id}"):
                         conn = get_db_connection()
                         cursor = conn.cursor()
-                        cursor.execute("DELETE FROM sales_details WHERE sale_id=?", (selected_sale_id,))
-                        cursor.execute("DELETE FROM sales WHERE id=?", (selected_sale_id,))
+                        cursor.execute("DELETE FROM sales_details WHERE sale_id=%s", (selected_sale_id,))
+                        cursor.execute("DELETE FROM sales WHERE id=%s", (selected_sale_id,))
                         conn.commit()
                         conn.close()
                         st.success(f"Sale #{selected_sale_id} has been deleted.")
@@ -655,7 +665,7 @@ with right_col:
             else:
                 st.error(f"Insufficient Cash! Short by: ₱ {abs(change_amount):,.2f}")
 
-        if st.button("✔ COMPLETE SALE / CHECKOUT", type="primary", use_container_width=True):
+        if st.button("✔ COMPLETE SALE / CHECKOUT", type="primary", width='stretch'):
             if cash_tendered < total_due:
                 st.error("Kulang ang ibinigay na cash ng customer.")
             else:
@@ -666,20 +676,21 @@ with right_col:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
                 ''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
                 
-                sale_id = cursor.lastrowid
+                sale_id = cursor.fetchone()[0]
 
                 for item in st.session_state.cart:
                     cursor.execute('''
                         INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
                     ''', (sale_id, item['name'], item['price'], item['qty'], item['subtotal']))
 
                     if item['category'] == 'Inventory':
                         cursor.execute('''
-                            UPDATE items SET stock = stock - ? WHERE id = ? AND stock != -1
+                            UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
                         ''', (item['qty'], item['id']))
 
                 conn.commit()
@@ -703,5 +714,5 @@ with right_col:
                 receipt_text += f"{'SALAMAT SA PAGTANGKILIK!':^42}\n"
 
                 st.session_state.cart = []
-                st.success(f"Sale completed successfully! Change: ₱ {change_amount:,.2f}")
+                st.success(f"Sale completed successfully! Saved to Supabase. Change: ₱ {change_amount:,.2f}")
                 receipt_preview_dialog(receipt_text)
