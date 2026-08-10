@@ -98,15 +98,55 @@ def init_db():
             ("Format Laptop/PC", "Services", 500.00, -1, None),
             ("Pancit Canton", "Inventory", 25.00, 50, "480001234567"),
             ("Cobra Energy Drink", "Inventory", 35.00, 30, "480001234568"),
-            ("Mineral Water 500ml", "Inventory", 15.00, 40, "480001234569"),
-            ("Cup Noodles", "Inventory", 30.00, 25, "480001234570"),
-            ("In-ear Earphones", "Inventory", 120.00, 10, "480001234571"),
-            ("16GB USB Flash Drive", "Inventory", 250.00, 8, "480001234572"),
-            ("A4 Bond Paper (10s)", "Inventory", 15.00, 100, "480001234573")
+            ("Mineral Water 500ml", "Inventory", 15.00, 40, "480001234569")
         ]
         cursor.executemany("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, %s, %s, %s, %s)", default_items)
         conn.commit()
     conn.close()
+
+# ---------------------------------------------------------
+# CATEGORIES LIST
+# ---------------------------------------------------------
+INVENTORY_CATEGORIES = [
+    "Inventory",
+    "Intel Processor",
+    "Intel Motherboard",
+    "AMD Processor",
+    "AMD Motherboard",
+    "RAM",
+    "RAM SODIMM",
+    "SSD",
+    "HDD",
+    "Video Card",
+    "POWER SUPPLY",
+    "CASING",
+    "MONITOR",
+    "EPSON PRINTER",
+    "BROTHER PRINTER",
+    "PROJECTOR & ACCESORIES",
+    "EPSON INK",
+    "EPSON MAITENANCE BOX",
+    "BROTHER INK",
+    "CANON CARTRIDGE",
+    "UPS",
+    "TAPO CCTV",
+    "HIKVISION",
+    "DAHUA",
+    "TPLINK",
+    "FLASH DRIVE",
+    "MICRO SD",
+    "KEYBOARD AND MOUSE",
+    "SPEAKER",
+    "HEADPHONE",
+    "UGREEN",
+    "LAPTOP CHARGER",
+    "HDMI CABLE",
+    "CABLES",
+    "COMLINK",
+    "WIFI ADAPTER",
+    "ACCESORIES",
+    "EXTERNAL CASE FOR SSD"
+]
 
 # ---------------------------------------------------------
 # CACHED DATA FUNCTIONS
@@ -140,7 +180,7 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, price, stock FROM items WHERE category='Inventory'", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services'", conn)
     conn.close()
     return df
 
@@ -215,17 +255,19 @@ def services_manager_dialog():
         if edit_id != 0:
             selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
             with st.form("edit_serv_form"):
+                e_id = st.number_input("Edit Service ID", value=int(selected_row["id"]), min_value=1, step=1)
                 e_name = st.text_input("Edit Service Name", value=selected_row["name"])
                 e_price = st.number_input("Edit Price (₱)", value=float(selected_row["price"]), min_value=0.0, step=1.0)
                 update_sub = st.form_submit_button("💾 Update Service")
                 if update_sub:
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE items SET name=%s, price=%s WHERE id=%s", (e_name, e_price, edit_id))
+                    cursor.execute("UPDATE items SET id=%s, name=%s, price=%s WHERE id=%s", (e_id, e_name, e_price, edit_id))
                     conn.commit()
                     conn.close()
                     st.cache_data.clear()
                     st.success("Service updated successfully!")
+                    st.rerun()
 
         st.divider()
         del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
@@ -237,12 +279,14 @@ def services_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Service deleted.")
+            st.rerun()
 
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
     st.subheader("Add New Inventory Item")
     with st.form("inventory_form", clear_on_submit=True):
         i_name = st.text_input("Item Name")
+        i_category = st.selectbox("Category", options=INVENTORY_CATEGORIES)
         i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0, value=0.0)
         i_stock = st.number_input("Stock Quantity", min_value=0, step=1, value=0)
         i_barcode = st.text_input("Barcode (Optional)")
@@ -250,12 +294,13 @@ def inventory_manager_dialog():
         if submitted and i_name:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, 'Inventory', %s, %s, %s)", 
-                           (i_name, i_price, i_stock, i_barcode if i_barcode else None))
+            cursor.execute("INSERT INTO items (name, category, price, stock, barcode) VALUES (%s, %s, %s, %s, %s)", 
+                           (i_name, i_category, i_price, i_stock, i_barcode if i_barcode else None))
             conn.commit()
             conn.close()
             st.cache_data.clear()
             st.success("Inventory item added to Supabase!")
+            st.rerun()
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -268,21 +313,29 @@ def inventory_manager_dialog():
         if edit_inv_id != 0:
             selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
             with st.form("edit_inv_form"):
+                ei_id = st.number_input("Edit Item ID", value=int(selected_inv_row["id"]), min_value=1, step=1)
                 ei_name = st.text_input("Edit Item Name", value=selected_inv_row["name"])
+                
+                current_cat = selected_inv_row["category"]
+                cat_index = INVENTORY_CATEGORIES.index(current_cat) if current_cat in INVENTORY_CATEGORIES else 0
+                ei_category = st.selectbox("Edit Category", options=INVENTORY_CATEGORIES, index=cat_index)
+                
                 ei_price = st.number_input("Edit Price (₱)", value=float(selected_inv_row["price"]), min_value=0.0, step=1.0)
                 ei_stock = st.number_input("Edit Stock", value=int(selected_inv_row["stock"]), min_value=0, step=1)
                 current_bc = selected_inv_row["barcode"]
                 ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
+                
                 update_inv_sub = st.form_submit_button("💾 Update Inventory Item")
                 if update_inv_sub:
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE items SET name=%s, price=%s, stock=%s, barcode=%s WHERE id=%s", 
-                                   (ei_name, ei_price, ei_stock, ei_barcode if ei_barcode else None, edit_inv_id))
+                    cursor.execute("UPDATE items SET id=%s, name=%s, category=%s, price=%s, stock=%s, barcode=%s WHERE id=%s", 
+                                   (ei_id, ei_name, ei_category, ei_price, ei_stock, ei_barcode if ei_barcode else None, edit_inv_id))
                     conn.commit()
                     conn.close()
                     st.cache_data.clear()
                     st.success("Inventory item updated successfully!")
+                    st.rerun()
 
         st.divider()
         del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
@@ -294,6 +347,7 @@ def inventory_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Item deleted.")
+            st.rerun()
 
 @st.dialog("🏷️ Edit Item Discount")
 def edit_discount_dialog(index, item):
@@ -450,13 +504,13 @@ with left_col:
 
             if db_item:
                 item_id, name, price, stock, cat = db_item
-                if cat == "Inventory" and stock == 0:
+                if cat != "Services" and stock == 0:
                     st.error(f"Item '{name}' is out of stock!")
                 else:
                     found = False
                     for c_item in st.session_state.cart:
                         if c_item['id'] == item_id:
-                            if cat == "Inventory" and stock != -1 and c_item['qty'] >= stock:
+                            if cat != "Services" and stock != -1 and c_item['qty'] >= stock:
                                 st.warning(f"Stock limit reached for '{name}'.")
                             else:
                                 c_item['qty'] += 1
@@ -509,10 +563,13 @@ with left_col:
         if df_inventory.empty:
             st.info("No inventory items available.")
         else:
+            st.dataframe(df_inventory, use_container_width=True, hide_index=True)
+            
+            st.divider()
             for _, row in df_inventory.iterrows():
                 c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
                 with c1:
-                    st.write(f"**{row['name']}**")
+                    st.write(f"**{row['name']}** \n`{row['category']}`")
                 with c2:
                     st.write(f"Stock: {row['stock'] if row['stock'] != -1 else 'Unli'}")
                 with c3:
@@ -533,7 +590,7 @@ with left_col:
                                     break
                             if not found:
                                 st.session_state.cart.append({
-                                    'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': 'Inventory',
+                                    'id': row['id'], 'name': row['name'], 'price': row['price'], 'qty': 1, 'category': row['category'],
                                     'discount_type': 'none', 'discount_value': 0.0
                                 })
                             st.rerun()
@@ -676,7 +733,7 @@ with right_col:
             if customer_type == "Government Customer":
                 if item['category'] == "Services":
                     tax_services += item_subtotal * (settings['tax_rate_services'] / 100.0)
-                elif item['category'] == "Inventory":
+                else:
                     tax_inventory += item_subtotal * (settings['tax_rate_inventory'] / 100.0)
 
         total_tax = tax_services + tax_inventory
@@ -721,7 +778,7 @@ with right_col:
                         VALUES (%s, %s, %s, %s, %s)
                     ''', (sale_id, item['name'], item['price'], item['qty'], item['subtotal']))
 
-                    if item['category'] == 'Inventory':
+                    if item['category'] != 'Services':
                         cursor.execute('''
                             UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
                         ''', (item['qty'], item['id']))
