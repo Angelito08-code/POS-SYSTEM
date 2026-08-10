@@ -146,7 +146,8 @@ INVENTORY_CATEGORIES = [
     "COMLINK",
     "WIFI ADAPTER",
     "ACCESORIES",
-    "EXTERNAL CASE FOR SSD"
+    "EXTERNAL CASE FOR SSD",
+    "EXTERNAL DRIVE",
 ]
 
 # ---------------------------------------------------------
