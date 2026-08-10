@@ -796,7 +796,7 @@ with right_col:
                 st.error("Kulang ang ibinigay na cash ng customer.")
             else:
                 date_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                non_vat_sales = subtotal if customer_type == "Regular Customer" else 0.0
+                non_vat_sales_val = float(subtotal) if customer_type == "Regular Customer" else 0.0
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -804,7 +804,15 @@ with right_col:
                     INSERT INTO sales (date_time, subtotal, non_vat_sales, vat_amount, total, cash, change_amount)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
-                ''', (date_time_str, subtotal, non_vat_sales, total_tax, total_due, cash_tendered, change_amount))
+                ''', (
+                    date_time_str, 
+                    float(subtotal), 
+                    non_vat_sales_val, 
+                    float(total_tax), 
+                    float(total_due), 
+                    float(cash_tendered), 
+                    float(change_amount)
+                ))
                 
                 sale_id = cursor.fetchone()[0]
 
@@ -812,12 +820,18 @@ with right_col:
                     cursor.execute('''
                         INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
                         VALUES (%s, %s, %s, %s, %s)
-                    ''', (sale_id, item['name'], item['price'], item['qty'], item['subtotal']))
+                    ''', (
+                        sale_id, 
+                        str(item['name']), 
+                        float(item['price']), 
+                        int(item['qty']), 
+                        float(item['subtotal'])
+                    ))
 
                     if item['category'] != 'Services':
                         cursor.execute('''
                             UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
-                        ''', (item['qty'], item['id']))
+                        ''', (int(item['qty']), int(item['id'])))
 
                 conn.commit()
                 conn.close()
