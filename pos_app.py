@@ -105,7 +105,7 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CATEGORIES LIST
+# CATEGORIES LIST (Walang PC CASE)
 # ---------------------------------------------------------
 INVENTORY_CATEGORIES = [
     "Inventory",
@@ -125,7 +125,7 @@ INVENTORY_CATEGORIES = [
     "BROTHER PRINTER",
     "PROJECTOR & ACCESORIES",
     "EPSON INK",
-    "EPSON MAINTENANCE BOX",
+    "EPSON MAITENANCE BOX",
     "BROTHER INK",
     "CANON CARTRIDGE",
     "UPS",
@@ -145,11 +145,7 @@ INVENTORY_CATEGORIES = [
     "COMLINK",
     "WIFI ADAPTER",
     "ACCESORIES",
-    "EXTERNAL CASE FOR SSD",
-    "CPU FAN",
-    "ACER LAPTOP",
-    "LENOVO LAPTOP",
-    "ASUS LAPTOP",
+    "EXTERNAL CASE FOR SSD"
 ]
 
 # ---------------------------------------------------------
@@ -476,6 +472,47 @@ st.divider()
 left_col, right_col = st.columns([1.3, 1])
 
 with left_col:
+    # Quick Search Area & Add to Cart Button Section
+    st.markdown("### 🔍 Search & Add to Cart")
+    conn_search = get_db_connection()
+    df_all_items = pd.read_sql("SELECT id, name, category, price, stock FROM items", conn_search)
+    conn_search.close()
+
+    if not df_all_items.empty:
+        item_options = [f"{row['name']} ({row['category']}) - ₱{row['price']:,.2f}" for _, row in df_all_items.iterrows()]
+        selected_item_str = st.selectbox("Hanapin ang Item o Service", options=["-- Piliin o I-type ang Item --"] + item_options, key="quick_search_item")
+        
+        if selected_item_str != "-- Piliin o I-type ang Item --":
+            selected_row = df_all_items.iloc[item_options.index(selected_item_str)]
+            if st.button("🛒 Add to Cart", type="primary", use_container_width=True, key="btn_quick_add"):
+                item_id = selected_row['id']
+                name = selected_row['name']
+                price = selected_row['price']
+                stock = selected_row['stock']
+                cat = selected_row['category']
+                
+                if cat != "Services" and stock == 0:
+                    st.error(f"Item '{name}' is out of stock!")
+                else:
+                    found = False
+                    for c_item in st.session_state.cart:
+                        if c_item['id'] == item_id:
+                            if cat != "Services" and stock != -1 and c_item['qty'] >= stock:
+                                st.warning(f"Stock limit reached for '{name}'.")
+                            else:
+                                c_item['qty'] += 1
+                            found = True
+                            break
+                    if not found:
+                        st.session_state.cart.append({
+                            'id': item_id, 'name': name, 'price': price, 'qty': 1, 'category': cat,
+                            'discount_type': 'none', 'discount_value': 0.0
+                        })
+                    st.success(f"Added to cart: {name}")
+                    st.rerun()
+
+    st.divider()
+
     with st.form("barcode_form", clear_on_submit=True):
         b_col1, b_col2 = st.columns([4, 1])
         with b_col1:
