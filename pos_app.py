@@ -145,7 +145,10 @@ INVENTORY_CATEGORIES = [
     "COMLINK",
     "WIFI ADAPTER",
     "ACCESORIES",
-    "EXTERNAL CASE FOR SSD"
+    "EXTERNAL CASE FOR SSD",
+    "CPU FAN",
+    "ACER LAPTOP",
+    "LENOVO LAPTOP",
 ]
 
 # ---------------------------------------------------------
