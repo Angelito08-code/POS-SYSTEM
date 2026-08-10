@@ -267,7 +267,6 @@ def services_manager_dialog():
                     conn.close()
                     st.cache_data.clear()
                     st.success("Service updated successfully!")
-                    st.rerun()
 
         st.divider()
         del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
@@ -279,7 +278,6 @@ def services_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Service deleted.")
-            st.rerun()
 
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
@@ -300,7 +298,6 @@ def inventory_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Inventory item added to Supabase!")
-            st.rerun()
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -335,7 +332,6 @@ def inventory_manager_dialog():
                     conn.close()
                     st.cache_data.clear()
                     st.success("Inventory item updated successfully!")
-                    st.rerun()
 
         st.divider()
         del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
@@ -347,7 +343,6 @@ def inventory_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Item deleted.")
-            st.rerun()
 
 @st.dialog("🏷️ Edit Item Discount")
 def edit_discount_dialog(index, item):
