@@ -149,6 +149,7 @@ INVENTORY_CATEGORIES = [
     "CPU FAN",
     "ACER LAPTOP",
     "LENOVO LAPTOP",
+    "ASUS LAPTOP",
 ]
 
 # ---------------------------------------------------------
