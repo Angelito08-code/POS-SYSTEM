@@ -1,3 +1,4 @@
+import streamlit as str_lit
 import streamlit as st
 import streamlit.components.v1 as components
 import psycopg2
@@ -105,7 +106,7 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CATEGORIES LIST (Walang PC CASE)
+# CATEGORIES LIST
 # ---------------------------------------------------------
 INVENTORY_CATEGORIES = [
     "Inventory",
@@ -149,7 +150,7 @@ INVENTORY_CATEGORIES = [
 ]
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS
+# CACHED DATA FUNCTIONS (OPTIMIZED FOR SPEED)
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -181,6 +182,13 @@ def load_services():
 def load_inventory():
     conn = get_db_connection()
     df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services'", conn)
+    conn.close()
+    return df
+
+@st.cache_data
+def load_all_items():
+    conn = get_db_connection()
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items", conn)
     conn.close()
     return df
 
@@ -472,11 +480,9 @@ st.divider()
 left_col, right_col = st.columns([1.3, 1])
 
 with left_col:
-    # Quick Search Area & Add to Cart Button Section
+    # Quick Search Area & Add to Cart Button Section (Gamit ang Cached Function)
     st.markdown("### 🔍 Search & Add to Cart")
-    conn_search = get_db_connection()
-    df_all_items = pd.read_sql("SELECT id, name, category, price, stock FROM items", conn_search)
-    conn_search.close()
+    df_all_items = load_all_items()
 
     if not df_all_items.empty:
         item_options = [f"{row['name']} ({row['category']}) - ₱{row['price']:,.2f}" for _, row in df_all_items.iterrows()]
@@ -696,7 +702,7 @@ with left_col:
                                 UPDATE sales 
                                 SET date_time=%s, total=%s, cash=%s, change_amount=%s 
                                 WHERE id=%s
-                            ''', (e_datetime, e_total, e_cash, e_change, selected_sale_id))
+                            ''', (e_datetime, float(e_total), float(e_cash), float(e_change), selected_sale_id))
                             conn.commit()
                             conn.close()
                             st.cache_data.clear()
