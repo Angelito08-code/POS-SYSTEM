@@ -327,10 +327,12 @@ def inventory_manager_dialog():
                 ei_category = st.selectbox("Edit Category", options=INVENTORY_CATEGORIES, index=cat_index)
                 
                 ei_price = st.number_input("Edit Price (₱)", value=float(selected_inv_row["price"]), min_value=0.0, step=1.0)
-               initial_stock = max(0, int(selected_inv_row["stock"]))
-ei_stock = st.number_input("Edit Stock", value=initial_stock, min_value=0, step=1)
-current_bc = selected_inv_row["barcode"]
-ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
+                # Ensure these lines match the exact indentation level of your function body
+                 initial_stock = max(0, int(selected_inv_row["stock"]))
+                 ei_stock = st.number_input("Edit Stock", value=initial_stock, min_value=0, step=1)
+                 current_bc = selected_inv_row["barcode"]
+                 ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
+
                 update_inv_sub = st.form_submit_button("💾 Update Inventory Item")
                 if update_inv_sub:
                     conn = get_db_connection()
