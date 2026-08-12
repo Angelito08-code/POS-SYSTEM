@@ -174,21 +174,21 @@ def load_settings():
 @st.cache_data
 def load_services():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services' ORDER BY id", conn)
+    df = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services' ORDER BY id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category, name", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category, name", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
     conn.close()
     return df
 
@@ -869,3 +869,4 @@ with right_col:
                 st.session_state.cart = []
                 st.success(f"Sale completed successfully! Saved to Supabase. Change: ₱ {change_amount:,.2f}")
                 receipt_preview_dialog(receipt_text)
+```[cite: 1]
