@@ -869,4 +869,3 @@ with right_col:
                 st.session_state.cart = []
                 st.success(f"Sale completed successfully! Saved to Supabase. Change: ₱ {change_amount:,.2f}")
                 receipt_preview_dialog(receipt_text)
-```
