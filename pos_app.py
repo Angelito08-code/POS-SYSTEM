@@ -118,6 +118,7 @@ INVENTORY_CATEGORIES = sorted([
     "CASING",
     "CABLES",
     "COMLINK",
+    "CPU FAN",
     "DAHUA",
     "EPSON INK",
     "EPSON MAITENANCE BOX",
