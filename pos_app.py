@@ -1,4 +1,4 @@
-import streamlit as str_lit
+[cite: 1]import streamlit as str_lit
 import streamlit as st
 import streamlit.components.v1 as components
 import psycopg2
@@ -106,52 +106,51 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CATEGORIES LIST
+# CATEGORIES LIST (NAKA-SORT ALPHABETICALLY)
 # ---------------------------------------------------------
-INVENTORY_CATEGORIES = [
-    "Inventory",
-    "Intel Processor",
-    "Intel Motherboard",
-    "AMD Processor",
+INVENTORY_CATEGORIES = sorted([
+    "ACCESORIES",
     "AMD Motherboard",
+    "AMD Processor",
+    "BROTHER INK",
+    "BROTHER PRINTER",
+    "CANON CARTRIDGE",
+    "CASING",
+    "CABLES",
+    "COMLINK",
+    "DAHUA",
+    "EPSON INK",
+    "EPSON MAITENANCE BOX",
+    "EPSON PRINTER",
+    "EXTERNAL CASE FOR SSD",
+    "EXTERNAL DRIVE",
+    "FLASH DRIVE",
+    "HDMI CABLE",
+    "HEADPHONE",
+    "HIKVISION",
+    "HDD",
+    "Intel Motherboard",
+    "Intel Processor",
+    "Inventory",
+    "KEYBOARD AND MOUSE",
+    "LAPTOP CHARGER",
+    "MICRO SD",
+    "MONITOR",
+    "POWER SUPPLY",
+    "PROJECTOR & ACCESORIES",
     "RAM",
     "RAM SODIMM",
     "SSD",
-    "HDD",
-    "Video Card",
-    "POWER SUPPLY",
-    "CASING",
-    "MONITOR",
-    "EPSON PRINTER",
-    "BROTHER PRINTER",
-    "PROJECTOR & ACCESORIES",
-    "EPSON INK",
-    "EPSON MAITENANCE BOX",
-    "BROTHER INK",
-    "CANON CARTRIDGE",
-    "UPS",
-    "TAPO CCTV",
-    "HIKVISION",
-    "DAHUA",
-    "TPLINK",
-    "FLASH DRIVE",
-    "MICRO SD",
-    "KEYBOARD AND MOUSE",
     "SPEAKER",
-    "HEADPHONE",
+    "TAPO CCTV",
+    "TPLINK",
+    "UPS",
     "UGREEN",
-    "LAPTOP CHARGER",
-    "HDMI CABLE",
-    "CABLES",
-    "COMLINK",
-    "WIFI ADAPTER",
-    "ACCESORIES",
-    "EXTERNAL CASE FOR SSD",
-    "EXTERNAL DRIVE",
-]
+    "WIFI ADAPTER"
+])
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS (OPTIMIZED FOR SPEED)
+# CACHED DATA FUNCTIONS
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -175,21 +174,21 @@ def load_settings():
 @st.cache_data
 def load_services():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services'", conn)
+    df = pd.read_sql("SELECT id, name, price FROM items WHERE category='Services' ORDER BY id", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services'", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category, name", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category, name", conn)
     conn.close()
     return df
 
@@ -260,7 +259,8 @@ def services_manager_dialog():
     if not df_serv.empty:
         st.dataframe(df_serv, use_container_width=True, hide_index=True)
         
-        edit_id = st.selectbox("Select Service ID to Edit", options=[0] + list(df_serv["id"]), key="edit_serv_select")
+        # Naka-sort na sunod-sunod ang ID options
+        edit_id = st.selectbox("Select Service ID to Edit", options=[0] + sorted(list(df_serv["id"])), key="edit_serv_select")
         if edit_id != 0:
             selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
             with st.form("edit_serv_form"):
@@ -278,7 +278,7 @@ def services_manager_dialog():
                     st.success("Service updated successfully!")
 
         st.divider()
-        del_id = st.selectbox("Select Service ID to Delete", options=[0] + list(df_serv["id"]), key="del_serv_select")
+        del_id = st.selectbox("Select Service ID to Delete", options=[0] + sorted(list(df_serv["id"])), key="del_serv_select")
         if del_id != 0 and st.button("🗑️ Delete Selected Service"):
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -295,7 +295,7 @@ def inventory_manager_dialog():
         i_name = st.text_input("Item Name")
         i_category = st.selectbox("Category", options=INVENTORY_CATEGORIES)
         i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0, value=0.0)
-        i_stock = st.number_input("Stock Quantity", min_value=0, step=1, value=0)
+        i_stock = st.number_input("Stock Quantity (-1 for Unli)", min_value=-1, step=1, value=0)
         i_barcode = st.text_input("Barcode (Optional)")
         submitted = st.form_submit_button("Add Inventory Item")
         if submitted and i_name:
@@ -315,7 +315,8 @@ def inventory_manager_dialog():
     if not df_inv.empty:
         st.dataframe(df_inv, use_container_width=True, hide_index=True)
         
-        edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + list(df_inv["id"]), key="edit_inv_select")
+        # Naka-sort na sunod-sunod ang ID options
+        edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + sorted(list(df_inv["id"])), key="edit_inv_select")
         if edit_inv_id != 0:
             selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
             with st.form("edit_inv_form"):
@@ -327,8 +328,11 @@ def inventory_manager_dialog():
                 ei_category = st.selectbox("Edit Category", options=INVENTORY_CATEGORIES, index=cat_index)
                 
                 ei_price = st.number_input("Edit Price (₱)", value=float(selected_inv_row["price"]), min_value=0.0, step=1.0)
-                initial_stock = max(0, int(selected_inv_row["stock"]))
-                ei_stock = st.number_input("Edit Stock", value=initial_stock, min_value=0, step=1)
+                
+                # Naka-ayos na ang pagtanggap ng stock pati negative/unlimited (-1)
+                initial_stock = int(selected_inv_row["stock"])
+                ei_stock = st.number_input("Edit Stock (-1 for Unli)", value=initial_stock, min_value=-1, step=1)
+                
                 current_bc = selected_inv_row["barcode"]
                 ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
                 
@@ -344,7 +348,7 @@ def inventory_manager_dialog():
                     st.success("Inventory item updated successfully!")
 
         st.divider()
-        del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + list(df_inv["id"]), key="del_inv_select")
+        del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + sorted(list(df_inv["id"])), key="del_inv_select")
         if del_inv_id != 0 and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -482,7 +486,6 @@ st.divider()
 left_col, right_col = st.columns([1.3, 1])
 
 with left_col:
-    # Quick Search Area & Add to Cart Button Section (Gamit ang Cached Function)
     st.markdown("### 🔍 Search & Add to Cart")
     df_all_items = load_all_items()
 
@@ -669,7 +672,8 @@ with left_col:
             st.divider()
             st.subheader("Edit or Delete Sale Record")
             
-            sale_ids = list(df_sales["id"])
+            # Naka-sort na sunod-sunod ang Sale ID options
+            sale_ids = sorted(list(df_sales["id"]))
             selected_sale_id = st.selectbox("Select Sale ID to Manage", options=[0] + sale_ids, key="manage_sale_select")
             
             if selected_sale_id != 0:
