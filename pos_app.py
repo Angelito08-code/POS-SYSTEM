@@ -182,14 +182,14 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category, name", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category, name", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
     conn.close()
     return df
 
@@ -296,7 +296,7 @@ def inventory_manager_dialog():
         i_name = st.text_input("Item Name")
         i_category = st.selectbox("Category", options=INVENTORY_CATEGORIES)
         i_price = st.number_input("Price (₱)", min_value=0.0, step=1.0, value=0.0)
-        i_stock = st.number_input("Stock Quantity (-1 for Unli)", min_value=-1, step=1, value=0)
+        i_stock = st.number_input("Stock Quantity", min_value=-1, step=1, value=0)
         i_barcode = st.text_input("Barcode (Optional)")
         submitted = st.form_submit_button("Add Inventory Item")
         if submitted and i_name:
