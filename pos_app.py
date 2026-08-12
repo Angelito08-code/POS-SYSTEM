@@ -1,4 +1,4 @@
-[cite: 1]import streamlit as str_lit
+import streamlit as str_lit
 import streamlit as st
 import streamlit.components.v1 as components
 import psycopg2
