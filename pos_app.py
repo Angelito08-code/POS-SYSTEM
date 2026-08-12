@@ -182,14 +182,14 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category, name", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category, name", conn)
     conn.close()
     return df
 
@@ -330,9 +330,8 @@ def inventory_manager_dialog():
                 
                 ei_price = st.number_input("Edit Price (₱)", value=float(selected_inv_row["price"]), min_value=0.0, step=1.0)
                 
-                # Naka-ayos na ang pagtanggap ng stock pati negative/unlimited (-1)
                 initial_stock = int(selected_inv_row["stock"])
-                ei_stock = st.number_input("Edit Stock (-1 for Unli)", value=initial_stock, min_value=-1, step=1)
+                ei_stock = st.number_input("Edit Stock", value=initial_stock, min_value=-1, step=1)
                 
                 current_bc = selected_inv_row["barcode"]
                 ei_barcode = st.text_input("Edit Barcode", value=str(current_bc) if pd.notna(current_bc) else "")
