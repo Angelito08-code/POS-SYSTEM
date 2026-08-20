@@ -106,31 +106,31 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CATEGORIES LIST (NAKA-SORT ALPHABETICALLY - Kasama na ang HP at Canon Ink)
+# CATEGORIES LIST (NAKA-SORT ALPHABETICALLY NA MAAYOS)
 # ---------------------------------------------------------
 INVENTORY_CATEGORIES = sorted([
-    "ACCESORIES",
+    "ACCESSORIES",
     "AMD Motherboard",
     "AMD Processor",
     "BROTHER INK",
     "BROTHER PRINTER",
+    "CABLES",
     "CANON CARTRIDGE",
     "CANON INK",
     "CASING",
-    "CABLES",
     "COMLINK",
     "CPU FAN",
     "DAHUA",
     "EPSON INK",
-    "EPSON MAITENANCE BOX",
+    "EPSON MAINTENANCE BOX",
     "EPSON PRINTER",
     "EXTERNAL CASE FOR SSD",
     "EXTERNAL DRIVE",
     "FLASH DRIVE",
+    "HDD",
     "HDMI CABLE",
     "HEADPHONE",
     "HIKVISION",
-    "HDD",
     "HP INK",
     "Intel Motherboard",
     "Intel Processor",
@@ -140,17 +140,17 @@ INVENTORY_CATEGORIES = sorted([
     "MICRO SD",
     "MONITOR",
     "POWER SUPPLY",
-    "PROJECTOR & ACCESORIES",
+    "PROJECTOR & ACCESSORIES",
     "RAM",
     "RAM SODIMM",
     "SSD",
     "SPEAKER",
     "TAPO CCTV",
     "TPLINK",
-    "UPS",
     "UGREEN",
+    "UPS",
     "WIFI ADAPTER"
-])
+], key=str.upper)
 
 # ---------------------------------------------------------
 # CACHED DATA FUNCTIONS
