@@ -182,14 +182,14 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category ASC, id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category ASC, id ASC", conn)
     conn.close()
     return df
 
@@ -260,7 +260,6 @@ def services_manager_dialog():
     if not df_serv.empty:
         st.dataframe(df_serv, use_container_width=True, hide_index=True)
         
-        # Naka-sort na sunod-sunod ang ID options
         edit_id = st.selectbox("Select Service ID to Edit", options=[0] + sorted(list(df_serv["id"])), key="edit_serv_select")
         if edit_id != 0:
             selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
@@ -307,7 +306,7 @@ def inventory_manager_dialog():
             conn.commit()
             conn.close()
             st.cache_data.clear()
-            st.success("Inventory item added to Supabase!")
+            st.success("Inventory item added to Supabase and grouped under its category!")
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -316,7 +315,6 @@ def inventory_manager_dialog():
     if not df_inv.empty:
         st.dataframe(df_inv, use_container_width=True, hide_index=True)
         
-        # Naka-sort na sunod-sunod ang ID options
         edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + sorted(list(df_inv["id"])), key="edit_inv_select")
         if edit_inv_id != 0:
             selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
@@ -490,7 +488,7 @@ with left_col:
     df_all_items = load_all_items()
 
     if not df_all_items.empty:
-        item_options = [f"{row['name']} ({row['category']}) - ₱{row['price']:,.2f}" for _, row in df_all_items.iterrows()]
+        item_options = [f"[{row['category']}] {row['name']} - ₱{row['price']:,.2f}" for _, row in df_all_items.iterrows()]
         selected_item_str = st.selectbox("Hanapin ang Item o Service", options=["-- Piliin o I-type ang Item --"] + item_options, key="quick_search_item")
         
         if selected_item_str != "-- Piliin o I-type ang Item --":
@@ -519,7 +517,7 @@ with left_col:
                             'id': item_id, 'name': name, 'price': price, 'qty': 1, 'category': cat,
                             'discount_type': 'none', 'discount_value': 0.0
                         })
-                    st.success(f"Added to cart: {name}")
+                    st.success(f"Added to cart: {name} ({cat})")
                     st.rerun()
 
     st.divider()
@@ -568,7 +566,7 @@ with left_col:
                             'id': item_id, 'name': name, 'price': price, 'qty': 1, 'category': cat,
                             'discount_type': 'none', 'discount_value': 0.0
                         })
-                    st.success(f"Added: {name}")
+                    st.success(f"Added: {name} under {cat}")
                     st.rerun()
             else:
                 st.error(f"Item not found: {scanned_code}")
@@ -604,16 +602,26 @@ with left_col:
                         st.rerun()
 
     with tab_inv:
-        st.subheader("Available Inventory")
+        st.subheader("Available Inventory (Grouped by Category)")
         df_inventory = load_inventory()
 
         if df_inventory.empty:
             st.info("No inventory items available.")
         else:
+            # Dito ipinapakita nang naka-grupo ang mga item ayon sa kanilang Category sa loob ng data table
             st.dataframe(df_inventory, use_container_width=True, hide_index=True)
             
             st.divider()
-            for _, row in df_inventory.iterrows():
+            
+            # Paggawa ng Accordion o Selectbox para sa per-category view o direktang mabilis na pagpili
+            selected_cat_filter = st.selectbox("I-filter ang Inventory ayon sa Category", options=["Lahat ng Category"] + INVENTORY_CATEGORIES)
+            
+            if selected_cat_filter != "Lahat ng Category":
+                filtered_df = df_inventory[df_inventory["category"] == selected_cat_filter]
+            else:
+                filtered_df = df_inventory
+
+            for _, row in filtered_df.iterrows():
                 c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
                 with c1:
                     st.write(f"**{row['name']}** \n`{row['category']}`")
@@ -672,7 +680,6 @@ with left_col:
             st.divider()
             st.subheader("Edit or Delete Sale Record")
             
-            # Naka-sort na sunod-sunod ang Sale ID options
             sale_ids = sorted(list(df_sales["id"]))
             selected_sale_id = st.selectbox("Select Sale ID to Manage", options=[0] + sale_ids, key="manage_sale_select")
             
@@ -758,7 +765,7 @@ with right_col:
 
             cols = st.columns([3, 1, 1, 1])
             with cols[0]:
-                st.write(f"**{item['name']}** (₱{item['price']:,.2f} x {item['qty']})")
+                st.write(f"**{item['name']}** \n`{item['category']}` (₱{item['price']:,.2f} x {item['qty']})")
                 if item['discount_type'] != 'none':
                     disc_symbol = '%' if item['discount_type'] == 'percentage' else '₱'
                     st.caption(f"Disc: {item['discount_value']}{disc_symbol} (-₱{disc_amt:,.2f})")
