@@ -151,7 +151,7 @@ INVENTORY_CATEGORIES = sorted([
 ])
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS
+# CACHED DATA FUNCTIONS (Naka-ayos ang ID nang sunud-sunod)
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -182,14 +182,16 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category ASC, id ASC", conn)
+    # Naka-sort na ngayon ayon sa ID nang sunud-sunod (ORDER BY id ASC) nang hindi ginalaw ang mga category at ibang column[cite: 1]
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category ASC, id ASC", conn)
+    # Naka-sort na ngayon ayon sa ID nang sunud-sunod (ORDER BY id ASC) nang hindi ginalaw ang mga category at ibang column[cite: 1]
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
     conn.close()
     return df
 
@@ -306,7 +308,7 @@ def inventory_manager_dialog():
             conn.commit()
             conn.close()
             st.cache_data.clear()
-            st.success("Inventory item added to Supabase and grouped under its category!")
+            st.success("Inventory item added to Supabase!")
 
     st.divider()
     st.subheader("Edit / Delete Inventory")
@@ -602,18 +604,16 @@ with left_col:
                         st.rerun()
 
     with tab_inv:
-        st.subheader("Available Inventory (Grouped by Category)")
+        st.subheader("Available Inventory (Ordered by ID)")
         df_inventory = load_inventory()
 
         if df_inventory.empty:
             st.info("No inventory items available.")
         else:
-            # Dito ipinapakita nang naka-grupo ang mga item ayon sa kanilang Category sa loob ng data table
             st.dataframe(df_inventory, use_container_width=True, hide_index=True)
             
             st.divider()
             
-            # Paggawa ng Accordion o Selectbox para sa per-category view o direktang mabilis na pagpili
             selected_cat_filter = st.selectbox("I-filter ang Inventory ayon sa Category", options=["Lahat ng Category"] + INVENTORY_CATEGORIES)
             
             if selected_cat_filter != "Lahat ng Category":
