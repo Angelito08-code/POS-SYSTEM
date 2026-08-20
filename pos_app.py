@@ -106,7 +106,7 @@ def init_db():
     conn.close()
 
 # ---------------------------------------------------------
-# CATEGORIES LIST (NAKA-SORT ALPHABETICALLY)
+# CATEGORIES LIST (NAKA-SORT ALPHABETICALLY - Kasama na ang HP at Canon Ink)
 # ---------------------------------------------------------
 INVENTORY_CATEGORIES = sorted([
     "ACCESORIES",
@@ -115,6 +115,7 @@ INVENTORY_CATEGORIES = sorted([
     "BROTHER INK",
     "BROTHER PRINTER",
     "CANON CARTRIDGE",
+    "CANON INK",
     "CASING",
     "CABLES",
     "COMLINK",
@@ -130,6 +131,7 @@ INVENTORY_CATEGORIES = sorted([
     "HEADPHONE",
     "HIKVISION",
     "HDD",
+    "HP INK",
     "Intel Motherboard",
     "Intel Processor",
     "Inventory",
@@ -151,7 +153,7 @@ INVENTORY_CATEGORIES = sorted([
 ])
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS (Naka-ayos ang ID nang sunud-sunod)
+# CACHED DATA FUNCTIONS
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -182,7 +184,6 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    # Naka-sort na ngayon ayon sa ID nang sunud-sunod (ORDER BY id ASC) nang hindi ginalaw ang mga category at ibang column[cite: 1]
     df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
     conn.close()
     return df
@@ -190,7 +191,6 @@ def load_inventory():
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    # Naka-sort na ngayon ayon sa ID nang sunud-sunod (ORDER BY id ASC) nang hindi ginalaw ang mga category at ibang column[cite: 1]
     df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
     conn.close()
     return df
@@ -604,7 +604,7 @@ with left_col:
                         st.rerun()
 
     with tab_inv:
-        st.subheader("Available Inventory (Ordered by ID)")
+        st.subheader("Available Inventory")
         df_inventory = load_inventory()
 
         if df_inventory.empty:
