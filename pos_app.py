@@ -628,31 +628,73 @@ with left_col:
     with tab_sales:
         st.subheader("Daily Sales Input & Export")
         
-        with st.expander("➕ Input New Daily Sale Record Manually"):
+        with st.expander("➕ Input New Daily Sale Record Manually (With Item & Stock Deduction)"):
             with st.form("manual_sale_form", clear_on_submit=True):
                 m_date = st.date_input("Sale Date", value=datetime.today())
                 m_time = st.time_input("Sale Time", value=datetime.now().time())
                 m_si = st.text_input("SI Number")
                 m_customer = st.text_input("Customer Name")
-                m_total = st.number_input("Total Amount (₱)", min_value=0.0, step=1.0, value=0.0)
                 
-                submitted_manual = st.form_submit_button("💾 Save Sale Record")
+                df_all_items_manual = load_all_items()
+                item_choices = []
+                item_map = {}
+                if not df_all_items_manual.empty:
+                    for _, r in df_all_items_manual.iterrows():
+                        label = f"[{r['category']}] {r['name']} (₱{r['price']:,.2f})"
+                        item_choices.append(label)
+                        item_map[label] = r
+                
+                selected_manual_item = st.selectbox("Select Item / Service", options=["-- Piliin ang Item --"] + item_choices)
+                m_qty = st.number_input("Quantity", min_value=1, step=1, value=1)
+                
+                submitted_manual = st.form_submit_button("💾 Save Sale & Deduct Stock")
                 if submitted_manual:
                     if not m_si:
                         st.error("Please provide an SI Number.")
+                    elif selected_manual_item == "-- Piliin ang Item --":
+                        st.error("Please select an item.")
                     else:
-                        full_datetime = f"{m_date} {m_time.strftime('%H:%M:%S')}"
-                        conn = get_db_connection()
-                        cursor = conn.cursor()
-                        cursor.execute('''
-                            INSERT INTO sales (date_time, si_number, customer_name, total)
-                            VALUES (%s, %s, %s, %s)
-                        ''', (full_datetime, m_si, m_customer if m_customer else "Walk-in", float(m_total)))
-                        conn.commit()
-                        conn.close()
-                        st.cache_data.clear()
-                        st.success("Sale record saved successfully!")
-                        st.rerun()
+                        r_item = item_map[selected_manual_item]
+                        item_id = r_item['id']
+                        item_name = r_item['name']
+                        item_price = r_item['price']
+                        item_cat = r_item['category']
+                        item_stock = r_item['stock']
+                        
+                        if item_cat != "Services" and item_stock != -1 and m_qty > item_stock:
+                            st.error(f"Insufficient stock! Available stock: {item_stock}")
+                        else:
+                            total_amount = item_price * m_qty
+                            full_datetime = f"{m_date} {m_time.strftime('%H:%M:%S')}"
+                            
+                            conn = get_db_connection()
+                            cursor = conn.cursor()
+                            
+                            # Insert main sale
+                            cursor.execute('''
+                                INSERT INTO sales (date_time, si_number, customer_name, total)
+                                VALUES (%s, %s, %s, %s)
+                                RETURNING id
+                            ''', (full_datetime, m_si, m_customer if m_customer else "Walk-in", float(total_amount)))
+                            sale_id = cursor.fetchone()[0]
+                            
+                            # Insert sale details containing item name
+                            cursor.execute('''
+                                INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
+                                VALUES (%s, %s, %s, %s, %s)
+                            ''', (sale_id, str(item_name), float(item_price), int(m_qty), float(total_amount)))
+                            
+                            # Less item from inventory stock
+                            if item_cat != 'Services':
+                                cursor.execute('''
+                                    UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
+                                ''', (int(m_qty), int(item_id)))
+                                
+                            conn.commit()
+                            conn.close()
+                            st.cache_data.clear()
+                            st.success("Manual sale recorded and inventory stock updated successfully!")
+                            st.rerun()
 
         st.divider()
         
