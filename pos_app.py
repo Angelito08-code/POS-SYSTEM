@@ -680,4 +680,238 @@ with left_col:
                             ''', (full_datetime, m_si, m_customer if m_customer else "Walk-in", float(total_amount)))
                             sale_id = cursor.fetchone()[0]
                             
-                            # Insert sale details containing
+                            # Insert sale details containing item name
+                            cursor.execute('''
+                                INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
+                                VALUES (%s, %s, %s, %s, %s)
+                            ''', (sale_id, str(item_name), float(item_price), int(m_qty), float(total_amount)))
+                            
+                            # Less item from inventory stock
+                            if item_cat != 'Services':
+                                cursor.execute('''
+                                    UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
+                                ''', (int(m_qty), int(item_id)))
+                                
+                            conn.commit()
+                            conn.close()
+                            st.cache_data.clear()
+                            st.success("Manual sale recorded and inventory stock updated successfully!")
+                            st.rerun()
+
+        st.divider()
+        
+        f_col1, f_col2 = st.columns([1, 2])
+        with f_col1:
+            enable_date_filter = st.checkbox("Filter by Date")
+        
+        selected_filter_date = None
+        if enable_date_filter:
+            with f_col2:
+                selected_filter_date = st.date_input("Select Sales Date", value=datetime.today(), key="sales_date_filter")
+
+        conn = get_db_connection()
+        if enable_date_filter and selected_filter_date:
+            date_str = selected_filter_date.strftime("%Y-%m-%d")
+            query = """
+                SELECT s.id, s.date_time, s.si_number, s.customer_name, 
+                       STRING_AGG(sd.item_name, ', ') AS item_names, s.total 
+                FROM sales s
+                LEFT JOIN sales_details sd ON s.id = sd.sale_id
+                WHERE s.date_time LIKE %s
+                GROUP BY s.id, s.date_time, s.si_number, s.customer_name, s.total
+                ORDER BY s.id DESC
+            """
+            df_sales_raw = pd.read_sql(query, conn, params=(f"{date_str}%",))
+        else:
+            query = """
+                SELECT s.id, s.date_time, s.si_number, s.customer_name, 
+                       STRING_AGG(sd.item_name, ', ') AS item_names, s.total 
+                FROM sales s
+                LEFT JOIN sales_details sd ON s.id = sd.sale_id
+                GROUP BY s.id, s.date_time, s.si_number, s.customer_name, s.total
+                ORDER BY s.id DESC
+            """
+            df_sales_raw = pd.read_sql(query, conn)
+        conn.close()
+
+        if df_sales_raw.empty:
+            st.info("No sales records found.")
+        else:
+            # Prepare display dataframe (excluding internal 'id')
+            df_display = df_sales_raw[['date_time', 'si_number', 'customer_name', 'item_names', 'total']].copy()
+            df_display.columns = ['Date & Time', 'SI Number', 'Customer Name', 'Items Bought', 'Total (₱)']
+            
+            st.dataframe(df_display, use_container_width=True, hide_index=True)
+            
+            # CSV Export Button (Excel Compatible, No openpyxl required)
+            csv_data = df_display.to_csv(index=False).encode('utf-8')
+
+            st.download_button(
+                label="📥 Export Daily Sales to CSV (Excel Compatible)",
+                data=csv_data,
+                file_name=f"daily_sales_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+            
+            st.divider()
+            st.subheader("Manage / Delete Sale Record")
+            
+            sale_options = {f"SI: {row['si_number']} | {row['customer_name']} | ₱{row['total']:,.2f} ({row['date_time']})": row['id'] for _, row in df_sales_raw.iterrows()}
+            selected_sale_label = st.selectbox("Select Sale to Delete", options=["-- Piliin ang Sale --"] + list(sale_options.keys()))
+            
+            if selected_sale_label != "-- Piliin ang Sale --":
+                target_sale_id = sale_options[selected_sale_label]
+                if st.button("🗑️ Delete Selected Sale Record", type="secondary"):
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM sales_details WHERE sale_id=%s", (target_sale_id,))
+                    cursor.execute("DELETE FROM sales WHERE id=%s", (target_sale_id,))
+                    conn.commit()
+                    conn.close()
+                    st.cache_data.clear()
+                    st.success("Sale record deleted successfully!")
+                    st.rerun()
+
+with right_col:
+    st.markdown("### 🛒 Current Order")
+    
+    if st.button("Clear Cart"):
+        st.session_state.cart = []
+        st.rerun()
+
+    if not st.session_state.cart:
+        st.info("Cart is empty.")
+    else:
+        subtotal = 0.0
+        tax_services = 0.0
+        tax_inventory = 0.0
+
+        customer_type = st.selectbox("Customer Type", ["Regular Customer", "Government Customer"])
+        si_number_input = st.text_input("SI Number (Sales Invoice #)", placeholder="Enter SI Number...")
+        customer_name_input = st.text_input("Customer Name", placeholder="Enter customer name...", value=customer_type)
+
+        for idx, item in enumerate(st.session_state.cart):
+            base_total = item['price'] * item['qty']
+            disc_amt = 0.0
+            if item['discount_type'] == 'percentage':
+                disc_amt = base_total * (item['discount_value'] / 100.0)
+            elif item['discount_type'] == 'fixed':
+                disc_amt = item['discount_value'] * item['qty']
+            
+            if disc_amt > base_total:
+                disc_amt = base_total
+                
+            item_subtotal = base_total - disc_amt
+            item['subtotal'] = item_subtotal
+
+            cols = st.columns([3, 1, 1, 1])
+            with cols[0]:
+                st.write(f"**{item['name']}** \n`{item['category']}` (₱{item['price']:,.2f} x {item['qty']})")
+                if item['discount_type'] != 'none':
+                    disc_symbol = '%' if item['discount_type'] == 'percentage' else '₱'
+                    st.caption(f"Disc: {item['discount_value']}{disc_symbol} (-₱{disc_amt:,.2f})")
+            with cols[1]:
+                if st.button("➕", key=f"inc_{idx}"):
+                    item['qty'] += 1
+                    st.rerun()
+            with cols[2]:
+                if st.button("➖", key=f"dec_{idx}"):
+                    item['qty'] -= 1
+                    if item['qty'] <= 0:
+                        st.session_state.cart.pop(idx)
+                    st.rerun()
+            with cols[3]:
+                if st.button("🏷️", key=f"disc_{idx}"):
+                    edit_discount_dialog(idx, item)
+
+            subtotal += item_subtotal
+
+            if customer_type == "Government Customer":
+                if item['category'] == "Services":
+                    tax_services += item_subtotal * (settings['tax_rate_services'] / 100.0)
+                else:
+                    tax_inventory += item_subtotal * (settings['tax_rate_inventory'] / 100.0)
+
+        total_tax = tax_services + tax_inventory
+        total_due = subtotal + total_tax
+
+        st.divider()
+        st.write(f"**Subtotal:** ₱ {subtotal:,.2f}")
+        if customer_type == "Government Customer":
+            st.write(f"**Services Tax ({settings['tax_rate_services']}%):** ₱ {tax_services:,.2f}")
+            st.write(f"**Inventory Tax ({settings['tax_rate_inventory']}%):** ₱ {tax_inventory:,.2f}")
+        st.markdown(f"### **TOTAL DUE:** ₱ {total_due:,.2f}")
+
+        cash_tendered = st.number_input("Cash Tendered (₱)", min_value=0.0, step=10.0, value=0.0)
+        change_amount = cash_tendered - total_due
+
+        if cash_tendered > 0:
+            if change_amount >= 0:
+                st.success(f"Change: ₱ {change_amount:,.2f}")
+            else:
+                st.error(f"Insufficient Cash! Short by: ₱ {abs(change_amount):,.2f}")
+
+        if st.button("✔ COMPLETE SALE / CHECKOUT", type="primary", use_container_width=True):
+            if not si_number_input:
+                st.error("Please enter an SI Number before checkout.")
+            elif cash_tendered < total_due:
+                st.error("Kulang ang ibinigay na cash ng customer.")
+            else:
+                date_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO sales (date_time, si_number, customer_name, total)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                ''', (
+                    date_time_str, 
+                    si_number_input,
+                    customer_name_input,
+                    float(total_due)
+                ))
+                
+                sale_id = cursor.fetchone()[0]
+
+                for item in st.session_state.cart:
+                    cursor.execute('''
+                        INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (
+                        sale_id, 
+                        str(item['name']), 
+                        float(item['price']), 
+                        int(item['qty']), 
+                        float(item['subtotal'])
+                    ))
+
+                    if item['category'] != 'Services':
+                        cursor.execute('''
+                            UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
+                        ''', (int(item['qty']), int(item['id'])))
+
+                conn.commit()
+                conn.close()
+                st.cache_data.clear()
+
+                receipt_text = "=" * 42 + "\n"
+                receipt_text += f"{settings['store_name']:^42}\n"
+                receipt_text += f"TIN: {settings['tin_number']:^42}\n"
+                receipt_text += "=" * 42 + "\n"
+                receipt_text += f"SI Number: {si_number_input}\n"
+                receipt_text += f"Date/Time: {date_time_str}\n"
+                receipt_text += f"Customer: {customer_name_input}\n"
+                receipt_text += "-" * 42 + "\n"
+                for item in st.session_state.cart:
+                    receipt_text += f"{item['name'][:15]:<16} {item['qty']:<3} ₱{item['subtotal']:<9.2f}\n"
+                receipt_text += "-" * 42 + "\n"
+                receipt_text += f"TOTAL DUE: ₱ {total_due:,.2f}\n"
+                receipt_text += f"Cash Tendered: ₱ {cash_tendered:,.2f}\n"
+                receipt_text += f"Change: ₱ {change_amount:,.2f}\n"
+                receipt_text += "=" * 42 + "\n"
+                receipt_text += f"{'SALAMAT SA PAGTANGKILIK!':^42}\n"
+
+                st.session_state.cart = []
+                st.success(f"Sale completed successfully! Saved to Supabase. Change: ₱ {change_amount:,.2f}")
+                receipt_preview_dialog(receipt_text)
