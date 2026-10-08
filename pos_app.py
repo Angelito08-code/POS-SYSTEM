@@ -73,6 +73,7 @@ def init_db():
         cursor.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS si_number TEXT;")
         cursor.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_name TEXT;")
         cursor.execute("ALTER TABLE sales ALTER COLUMN cash DROP NOT NULL;")
+        cursor.execute("ALTER TABLE sales ALTER COLUMN change_amount DROP NOT NULL;")
         conn.commit()
     except Exception:
         conn.rollback()
