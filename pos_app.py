@@ -68,10 +68,11 @@ def init_db():
         )
     ''')
     
-    # Safe column migrations if table already exists without si_number or customer_name
+    # Safe column migrations and constraint fixes if table already exists
     try:
         cursor.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS si_number TEXT;")
         cursor.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_name TEXT;")
+        cursor.execute("ALTER TABLE sales ALTER COLUMN cash DROP NOT NULL;")
         conn.commit()
     except Exception:
         conn.rollback()
@@ -610,7 +611,7 @@ with left_col:
                             st.error("Out of stock!")
                         else:
                             found = False
-                            for c_item in st.session_state.cart: # Fixed missing colon here
+                            for c_item in st.session_state.cart:
                                 if c_item['id'] == row['id']:
                                     if row['stock'] != -1 and c_item['qty'] >= row['stock']:
                                         st.warning("Stock limit reached.")
