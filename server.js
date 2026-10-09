@@ -1,12 +1,11 @@
 const express = require('express');
 const { Pool } = require('pg');
-const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Connection
 const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres.ylwczrmidyndkvhgnblg:IzoMeELhcSr4Uhq5@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres';
 
 const pool = new Pool({
@@ -14,7 +13,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Initialize DB Tables & Default Data
+// Database Initialization
 async function initDb() {
   const client = await pool.connect();
   try {
@@ -51,13 +50,11 @@ async function initDb() {
       );
     `);
 
-    // Safe column migration
     await client.query(`
       ALTER TABLE sales ADD COLUMN IF NOT EXISTS si_number TEXT;
       ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_name TEXT;
     `);
 
-    // Insert Default Items if database is empty
     const { rows } = await client.query('SELECT COUNT(*) FROM items');
     if (parseInt(rows[0].count, 10) === 0) {
       const defaultItems = [
@@ -71,7 +68,6 @@ async function initDb() {
         ['Cobra Energy Drink', 'Inventory', 35.00, 30, '480001234568'],
         ['Mineral Water 500ml', 'Inventory', 15.00, 40, '480001234569']
       ];
-
       for (const item of defaultItems) {
         await client.query(
           'INSERT INTO items (name, category, price, stock, barcode) VALUES ($1, $2, $3, $4, $5)',
@@ -80,23 +76,20 @@ async function initDb() {
       }
     }
   } catch (err) {
-    console.error('Database initialization error:', err);
+    console.error('DB Init Error:', err);
   } finally {
     client.release();
   }
 }
-
 initDb();
 
-// --- API ROUTES ---
+// --- API ENDPOINTS ---
 
-// Load Settings
 app.get('/api/settings', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT key, value FROM settings');
     const settings = {};
     rows.forEach(r => settings[r.key] = r.value);
-
     res.json({
       store_name: settings.store_name || 'R-TECH COMPUTER CENTER',
       tin_number: settings.tin_number || '123-456-789-00000',
@@ -108,7 +101,6 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-// Save Setting
 app.post('/api/settings', async (req, res) => {
   const { store_name, tin_number, tax_rate_services, tax_rate_inventory } = req.body;
   try {
@@ -125,17 +117,15 @@ app.post('/api/settings', async (req, res) => {
   }
 });
 
-// Load All Items
 app.get('/api/items', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, category, price, stock, barcode FROM items ORDER BY id ASC');
+    const { rows } = await pool.query('SELECT * FROM items ORDER BY id ASC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Add Item/Service
 app.post('/api/items', async (req, res) => {
   const { name, category, price, stock, barcode } = req.body;
   try {
@@ -143,39 +133,12 @@ app.post('/api/items', async (req, res) => {
       'INSERT INTO items (name, category, price, stock, barcode) VALUES ($1, $2, $3, $4, $5)',
       [name, category, price, stock ?? -1, barcode || null]
     );
-    res.json({ message: 'Item created' });
+    res.json({ message: 'Item added' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Update Item
-app.put('/api/items/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, category, price, stock, barcode } = req.body;
-  try {
-    await pool.query(
-      'UPDATE items SET name=$1, category=$2, price=$3, stock=$4, barcode=$5 WHERE id=$6',
-      [name, category, price, stock, barcode || null, id]
-    );
-    res.json({ message: 'Item updated' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete Item
-app.delete('/api/items/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await pool.query('DELETE FROM items WHERE id=$1', [id]);
-    res.json({ message: 'Item deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Complete Sale / Checkout
 app.post('/api/sales', async (req, res) => {
   const client = await pool.connect();
   try {
@@ -203,7 +166,7 @@ app.post('/api/sales', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.json({ message: 'Sale completed', saleId });
+    res.json({ message: 'Checkout successful', saleId });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
@@ -212,47 +175,5 @@ app.post('/api/sales', async (req, res) => {
   }
 });
 
-// Get Sales History
-app.get('/api/sales', async (req, res) => {
-  const { date } = req.query;
-  try {
-    let query = `
-      SELECT s.id, s.date_time, s.si_number, s.customer_name, 
-             STRING_AGG(sd.item_name, ', ') AS item_names, s.total 
-      FROM sales s
-      LEFT JOIN sales_details sd ON s.id = sd.sale_id
-    `;
-    const params = [];
-    if (date) {
-      query += ` WHERE s.date_time LIKE $1`;
-      params.push(`${date}%`);
-    }
-    query += ` GROUP BY s.id, s.date_time, s.si_number, s.customer_name, s.total ORDER BY s.id DESC`;
-
-    const { rows } = await pool.query(query, params);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete Sale Record
-app.delete('/api/sales/:id', async (req, res) => {
-  const { id } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('DELETE FROM sales_details WHERE sale_id=$1', [id]);
-    await client.query('DELETE FROM sales WHERE id=$1', [id]);
-    await client.query('COMMIT');
-    res.json({ message: 'Sale record deleted' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
