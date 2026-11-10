@@ -130,7 +130,7 @@ INVENTORY_CATEGORIES = sorted([
 ], key=str.upper)
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS (With Category Grouping & Ascending IDs)
+# CACHED DATA FUNCTIONS (Strict ID Ascending Order)
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -161,14 +161,14 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category ASC, id ASC", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category ASC, id ASC", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
     conn.close()
     return df
 
@@ -234,7 +234,7 @@ def services_manager_dialog():
             st.rerun()
 
     st.divider()
-    st.subheader("Edit / Delete Services (Searchable by Name)")
+    st.subheader("Edit / Delete Services")
     df_serv = load_services()
     
     if not df_serv.empty:
@@ -296,7 +296,7 @@ def inventory_manager_dialog():
             st.rerun()
 
     st.divider()
-    st.subheader("Edit / Delete Inventory (Searchable by Name)")
+    st.subheader("Edit / Delete Inventory ")
     df_inv = load_inventory()
     
     if not df_inv.empty:
