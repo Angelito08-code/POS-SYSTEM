@@ -130,7 +130,7 @@ INVENTORY_CATEGORIES = sorted([
 ], key=str.upper)
 
 # ---------------------------------------------------------
-# CACHED DATA FUNCTIONS
+# CACHED DATA FUNCTIONS (With Category Grouping & Ascending IDs)
 # ---------------------------------------------------------
 @st.cache_data
 def load_settings():
@@ -161,14 +161,14 @@ def load_services():
 @st.cache_data
 def load_inventory():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, barcode, name, category, price, stock FROM items WHERE category != 'Services' ORDER BY category ASC, id ASC", conn)
     conn.close()
     return df
 
 @st.cache_data
 def load_all_items():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY id ASC", conn)
+    df = pd.read_sql("SELECT id, name, category, price, stock FROM items ORDER BY category ASC, id ASC", conn)
     conn.close()
     return df
 
@@ -231,16 +231,20 @@ def services_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Service added to Supabase!")
+            st.rerun()
 
     st.divider()
-    st.subheader("Edit / Delete Services")
+    st.subheader("Edit / Delete Services (Searchable by Name)")
     df_serv = load_services()
     
     if not df_serv.empty:
         st.dataframe(df_serv, use_container_width=True, hide_index=True)
         
-        edit_id = st.selectbox("Select Service ID to Edit", options=[0] + sorted(list(df_serv["id"])), key="edit_serv_select")
-        if edit_id != 0:
+        service_options = {f"{row['name']} (ID: {row['id']} - ₱{row['price']:,.2f})": row['id'] for _, row in df_serv.iterrows()}
+        selected_serv_label = st.selectbox("Search & Select Service to Edit", options=["-- Search Service by Name --"] + list(service_options.keys()), key="edit_serv_select")
+        
+        if selected_serv_label != "-- Search Service by Name --":
+            edit_id = service_options[selected_serv_label]
             selected_row = df_serv[df_serv["id"] == edit_id].iloc[0]
             with st.form("edit_serv_form"):
                 e_id = st.number_input("Edit Service ID", value=int(selected_row["id"]), min_value=1, step=1)
@@ -255,10 +259,12 @@ def services_manager_dialog():
                     conn.close()
                     st.cache_data.clear()
                     st.success("Service updated successfully!")
+                    st.rerun()
 
         st.divider()
-        del_id = st.selectbox("Select Service ID to Delete", options=[0] + sorted(list(df_serv["id"])), key="del_serv_select")
-        if del_id != 0 and st.button("🗑️ Delete Selected Service"):
+        del_serv_label = st.selectbox("Search & Select Service to Delete", options=["-- Search Service by Name --"] + list(service_options.keys()), key="del_serv_select")
+        if del_serv_label != "-- Search Service by Name --" and st.button("🗑️ Delete Selected Service"):
+            del_id = service_options[del_serv_label]
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("DELETE FROM items WHERE id=%s", (del_id,))
@@ -266,6 +272,7 @@ def services_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Service deleted.")
+            st.rerun()
 
 @st.dialog("📦 Manage Inventory", width="large")
 def inventory_manager_dialog():
@@ -286,16 +293,20 @@ def inventory_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Inventory item added to Supabase!")
+            st.rerun()
 
     st.divider()
-    st.subheader("Edit / Delete Inventory")
+    st.subheader("Edit / Delete Inventory (Searchable by Name)")
     df_inv = load_inventory()
     
     if not df_inv.empty:
         st.dataframe(df_inv, use_container_width=True, hide_index=True)
         
-        edit_inv_id = st.selectbox("Select Item ID to Edit", options=[0] + sorted(list(df_inv["id"])), key="edit_inv_select")
-        if edit_inv_id != 0:
+        inv_options = {f"[{row['category']}] {row['name']} (ID: {row['id']} - ₱{row['price']:,.2f})": row['id'] for _, row in df_inv.iterrows()}
+        selected_inv_label = st.selectbox("Search & Select Inventory Item to Edit", options=["-- Search Item by Name --"] + list(inv_options.keys()), key="edit_inv_select")
+        
+        if selected_inv_label != "-- Search Item by Name --":
+            edit_inv_id = inv_options[selected_inv_label]
             selected_inv_row = df_inv[df_inv["id"] == edit_inv_id].iloc[0]
             with st.form("edit_inv_form"):
                 ei_id = st.number_input("Edit Item ID", value=int(selected_inv_row["id"]), min_value=1, step=1)
@@ -323,10 +334,12 @@ def inventory_manager_dialog():
                     conn.close()
                     st.cache_data.clear()
                     st.success("Inventory item updated successfully!")
+                    st.rerun()
 
         st.divider()
-        del_inv_id = st.selectbox("Select Item ID to Delete", options=[0] + sorted(list(df_inv["id"])), key="del_inv_select")
-        if del_inv_id != 0 and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
+        del_inv_label = st.selectbox("Search & Select Inventory Item to Delete", options=["-- Search Item by Name --"] + list(inv_options.keys()), key="del_inv_select")
+        if del_inv_label != "-- Search Item by Name --" and st.button("🗑️ Delete Selected Item", key="btn_del_inv"):
+            del_inv_id = inv_options[del_inv_label]
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("DELETE FROM items WHERE id=%s", (del_inv_id,))
@@ -334,6 +347,7 @@ def inventory_manager_dialog():
             conn.close()
             st.cache_data.clear()
             st.success("Item deleted.")
+            st.rerun()
 
 @st.dialog("🏷️ Edit Item Discount")
 def edit_discount_dialog(index, item):
@@ -672,7 +686,6 @@ with left_col:
                             conn = get_db_connection()
                             cursor = conn.cursor()
                             
-                            # Insert main sale
                             cursor.execute('''
                                 INSERT INTO sales (date_time, si_number, customer_name, total)
                                 VALUES (%s, %s, %s, %s)
@@ -680,13 +693,11 @@ with left_col:
                             ''', (full_datetime, m_si, m_customer if m_customer else "Walk-in", float(total_amount)))
                             sale_id = cursor.fetchone()[0]
                             
-                            # Insert sale details containing item name
                             cursor.execute('''
                                 INSERT INTO sales_details (sale_id, item_name, price, quantity, subtotal)
                                 VALUES (%s, %s, %s, %s, %s)
                             ''', (sale_id, str(item_name), float(item_price), int(m_qty), float(total_amount)))
                             
-                            # Less item from inventory stock
                             if item_cat != 'Services':
                                 cursor.execute('''
                                     UPDATE items SET stock = stock - %s WHERE id = %s AND stock != -1
@@ -737,13 +748,11 @@ with left_col:
         if df_sales_raw.empty:
             st.info("No sales records found.")
         else:
-            # Prepare display dataframe (excluding internal 'id')
             df_display = df_sales_raw[['date_time', 'si_number', 'customer_name', 'item_names', 'total']].copy()
             df_display.columns = ['Date & Time', 'SI Number', 'Customer Name', 'Items Bought', 'Total (₱)']
             
             st.dataframe(df_display, use_container_width=True, hide_index=True)
             
-            # CSV Export Button (Excel Compatible, No openpyxl required)
             csv_data = df_display.to_csv(index=False).encode('utf-8')
 
             st.download_button(
